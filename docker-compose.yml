@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  dapur_jupyter:
+    build: ./01_dapur_jupyter
+    container_name: agriva_jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./01_dapur_jupyter:/app
