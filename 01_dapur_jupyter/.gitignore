@@ -1,0 +1,11 @@
+# Saring file sampah Jupyter
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Saring cache Python
+__pycache__/
+*.pyc
+
+# Mengabaikan log eksperimen MLflow
+mlruns/
+*.db
