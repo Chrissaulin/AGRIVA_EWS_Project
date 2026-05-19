@@ -1,11 +1,428 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>AGRIVA Dashboard - Sistem Peringatan Dini & Peramalan Pertanian</title>
+    <meta name="description" content="Dashboard interaktif AGRIVA untuk Early Warning System kekeringan dan peramalan panen berbasis Machine Learning.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<h1>Hello World</h1>
+    <!-- ===== TOP NAVIGATION BAR ===== -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-left">
+            <div class="brand">
+                <div class="brand-icon">🌾</div>
+                <h1>AGRIVA</h1>
+            </div>
+        </div>
+        <div class="nav-right">
+            <a href="#" class="nav-link active" data-page="home" id="nav-home">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-link" data-page="map" id="nav-map">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+                <span>Map</span>
+            </a>
+            <a href="#" class="nav-link" data-page="prediksi" id="nav-prediksi">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span>Prediksi</span>
+            </a>
+            <a href="#" class="nav-link" data-page="forecasting" id="nav-forecasting">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                <span>Forecasting</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- ===== MAIN CONTENT AREA ===== -->
+    <main class="main-content" id="mainContent">
+
+        <!-- ==================== HOME PAGE ==================== -->
+        <section class="page active" id="page-home">
+            <div class="page-header">
+                <div>
+                    <h2>Dashboard Overview</h2>
+                    <p class="page-subtitle">Eksplorasi data dan ringkasan model Early Warning System</p>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Data</span>
+                        <span class="stat-value" id="statRows">-</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Dimensi (Kolom)</span>
+                        <span class="stat-value" id="statCols">-</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Provinsi</span>
+                        <span class="stat-value" id="statProvinces">-</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Rentang Tahun</span>
+                        <span class="stat-value" id="statYears">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Distribusi Target EWS</h3>
+                        <span class="chart-badge">Aman vs Berisiko</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="chartTarget"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Distribusi Klaster Wilayah</h3>
+                        <span class="chart-badge">3 Clusters</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="chartCluster"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Risk & Province Risk -->
+            <div class="charts-grid">
+                <div class="chart-card wide">
+                    <div class="chart-header">
+                        <h3>Persebaran Risiko per Bulan</h3>
+                        <span class="chart-badge">Monthly</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="chartMonthly"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card wide">
+                    <div class="chart-header">
+                        <h3>Risiko per Provinsi</h3>
+                        <span class="chart-badge">Top Provinces</span>
+                    </div>
+                    <div class="chart-body chart-body-tall">
+                        <canvas id="chartProvince"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Stats Table -->
+            <div class="table-card">
+                <div class="chart-header">
+                    <h3>Statistik Deskriptif Fitur</h3>
+                    <span class="chart-badge">Model Features</span>
+                </div>
+                <div class="table-wrapper">
+                    <table id="featureTable">
+                        <thead>
+                            <tr>
+                                <th>Fitur</th>
+                                <th>Min</th>
+                                <th>Max</th>
+                                <th>Mean</th>
+                                <th>Std</th>
+                            </tr>
+                        </thead>
+                        <tbody id="featureTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Model Info -->
+            <div class="model-info-card" id="modelInfoCard">
+                <div class="chart-header">
+                    <h3>Informasi Model</h3>
+                    <span class="chart-badge badge-green">XGBoost</span>
+                </div>
+                <div class="model-info-grid" id="modelInfoGrid"></div>
+            </div>
+        </section>
+
+        <!-- ==================== MAP PAGE ==================== -->
+        <section class="page" id="page-map">
+            <div class="page-header">
+                <div>
+                    <h2>Peta Peringatan Dini</h2>
+                    <p class="page-subtitle">Visualisasi status EWS tiap provinsi berdasarkan tahun dan bulan</p>
+                </div>
+                <div class="filter-bar" id="mapFilters">
+                    <div class="filter-group">
+                        <label for="filterYear">Tahun</label>
+                        <select id="filterYear"></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterMonth">Bulan</label>
+                        <select id="filterMonth">
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Maret</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Juni</option>
+                            <option value="7">Juli</option>
+                            <option value="8">Agustus</option>
+                            <option value="9">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+                    <button class="btn-filter" id="btnApplyFilter">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        Terapkan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Map Legend -->
+            <div class="map-legend">
+                <div class="legend-item">
+                    <span class="legend-dot safe"></span>
+                    <span>Aman</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot danger"></span>
+                    <span>Berisiko</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot nodata"></span>
+                    <span>Tidak Ada Data</span>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="map-wrapper">
+                <div id="map"></div>
+                <div class="map-info-panel" id="mapInfoPanel">
+                    <p class="map-info-text">Pilih tahun dan bulan, lalu klik <strong>Terapkan</strong> untuk melihat status EWS.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PREDIKSI PAGE ==================== -->
+        <section class="page" id="page-prediksi">
+            <div class="page-header">
+                <div>
+                    <h2>Prediksi EWS</h2>
+                    <p class="page-subtitle">Masukkan parameter untuk memprediksi status peringatan dini provinsi</p>
+                </div>
+            </div>
+
+            <div class="predict-layout">
+                <div class="predict-form-card">
+                    <form id="ewsForm" class="predict-form">
+                        <div class="form-section">
+                            <h3 class="form-section-title">Pilih Provinsi</h3>
+                            <div class="form-group full-width">
+                                <label for="predictProvince">Provinsi</label>
+                                <select id="predictProvince" name="province" required>
+                                    <option value="">-- Pilih Provinsi --</option>
+                                </select>
+                                <span class="input-hint" id="clusterHint">Cluster akan terdeteksi otomatis</span>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="form-section-title">Parameter Iklim & Vegetasi</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="rainfall">Curah Hujan (Rainfall)</label>
+                                    <input type="number" id="rainfall" name="Rainfall" step="0.001" placeholder="e.g. 150.5" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="spi3">SPI (3 Bulan)</label>
+                                    <input type="number" id="spi3" name="SPI_3_months" step="0.001" placeholder="e.g. -1.2" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="temperature">Suhu (°C)</label>
+                                    <input type="number" id="temperature" name="Temperature" step="0.001" placeholder="e.g. 28.5" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="wsi">Water Satisfaction Index</label>
+                                    <input type="number" id="wsi" name="WSI" step="0.001" placeholder="e.g. 85.0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="solarRad">Radiasi Surya</label>
+                                    <input type="number" id="solarRad" name="Solar_Radiation" step="0.001" placeholder="e.g. 180000" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="soilMoisture">Kelembapan Tanah</label>
+                                    <input type="number" id="soilMoisture" name="Soil_Moisture" step="0.001" placeholder="e.g. 0.35" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="fpar">FPAR</label>
+                                    <input type="number" id="fpar" name="FPAR" step="0.001" placeholder="e.g. 68.0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="fparZ">FPAR Z-Score</label>
+                                    <input type="number" id="fparZ" name="FPAR_zscore" step="0.001" placeholder="e.g. -0.2" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="monthExt">Bulan (1-12)</label>
+                                    <input type="number" id="monthExt" name="month_extracted" min="1" max="12" placeholder="e.g. 8" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-predict" id="btnPredict">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                            <span>Analisis Prediksi</span>
+                            <div class="loader" id="predictLoader"></div>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Result Panel -->
+                <div class="predict-result-card" id="predictResultCard">
+                    <div class="result-placeholder" id="resultPlaceholder">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                        <p>Hasil prediksi akan muncul di sini</p>
+                    </div>
+                    <div class="result-content hidden" id="resultContent">
+                        <div class="result-header">
+                            <h3>Hasil Prediksi EWS</h3>
+                        </div>
+                        <div class="result-badge-container">
+                            <div class="result-badge" id="resultBadge">-</div>
+                        </div>
+                        <div class="result-details" id="resultDetails"></div>
+                        <div class="result-probability" id="resultProbability"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== FORECASTING PAGE ==================== -->
+        <section class="page" id="page-forecasting">
+            <div class="page-header">
+                <div>
+                    <h2>Peramalan (Forecasting)</h2>
+                    <p class="page-subtitle">Prediksi parameter iklim masa depan menggunakan model Auto-Regressive XGBoost</p>
+                </div>
+            </div>
+
+            <!-- Forecast Controls -->
+            <div class="forecast-controls">
+                <div class="filter-group">
+                    <label for="forecastProvince">Provinsi</label>
+                    <select id="forecastProvince"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="forecastVariable">Variabel</label>
+                    <select id="forecastVariable">
+                        <option value="Rainfall">Curah Hujan (Rainfall)</option>
+                        <option value="SPI - 3 months">SPI - 3 Bulan</option>
+                        <option value="Temperature">Suhu (Temperature)</option>
+                        <option value="Water Satisfaction Index (WSI)">WSI</option>
+                        <option value="Solar Radiation">Radiasi Surya</option>
+                        <option value="Soil Moisture (gapfilled historical time series)">Kelembapan Tanah</option>
+                        <option value="FPAR">FPAR</option>
+                        <option value="FPAR - zscore">FPAR Z-Score</option>
+                    </select>
+                </div>
+                <div class="filter-group slider-group">
+                    <label for="forecastSteps">Jumlah Dekad: <strong id="stepsValue">3</strong></label>
+                    <input type="range" id="forecastSteps" min="1" max="36" value="3" class="slider">
+                </div>
+                <button class="btn-filter" id="btnForecast">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    Jalankan Forecast
+                </button>
+            </div>
+
+            <!-- Forecast Charts -->
+            <div class="charts-grid">
+                <div class="chart-card wide">
+                    <div class="chart-header">
+                        <h3>Historis & Forecasting</h3>
+                        <span class="chart-badge" id="forecastChartBadge">Rainfall</span>
+                    </div>
+                    <div class="chart-body chart-body-tall">
+                        <canvas id="chartForecast"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forecast Results Table -->
+            <div class="table-card" id="forecastTableCard" style="display:none;">
+                <div class="chart-header">
+                    <h3>Detail Hasil Forecasting</h3>
+                    <span class="chart-badge">Dekad Predictions</span>
+                </div>
+                <div class="table-wrapper">
+                    <table id="forecastTable">
+                        <thead>
+                            <tr>
+                                <th>Step</th>
+                                <th>Tanggal</th>
+                                <th>Rainfall</th>
+                                <th>SPI-3M</th>
+                                <th>Temp (°C)</th>
+                                <th>WSI</th>
+                                <th>Solar Rad</th>
+                                <th>Soil Moist</th>
+                                <th>FPAR</th>
+                                <th>FPAR-Z</th>
+                            </tr>
+                        </thead>
+                        <tbody id="forecastTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Custom JS -->
+    <script src="app.js"></script>
 </body>
+
 </html>
