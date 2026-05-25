@@ -1,101 +1,56 @@
 const API = "http://localhost:8001";
 let leafletMap, geojsonLayer, mapData = {};
 
+// ===== TIER 2: FRONTEND LOGIC ENGINEER =====
+
 // ===== NAVIGATION =====
-document.querySelectorAll('.nav-link').forEach(link => {
+document.querySelectorAll('.nav-link, .nav-page-link, .hero-buttons a, .benefit-section a, .footer-links a').forEach(link => {
     link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const page = link.dataset.page;
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById('page-' + page).classList.add('active');
-        if (page === 'map' && !leafletMap) initMap();
-        if (page === 'map' && leafletMap) leafletMap.invalidateSize();
+        if(link.hasAttribute('data-page')) {
+            e.preventDefault();
+            switchPage(link.dataset.page);
+        }
     });
 });
 
+window.switchPage = function(page) {
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    
+    // Find nav link corresponding to the page and set active
+    const navLink = document.querySelector(`.nav-link[data-page="${page}"]`);
+    if(navLink) navLink.classList.add('active');
+
+    // Handle dropdown active state
+    if(page === 'eda' || page === 'model' || page === 'database') {
+        const dropdown = document.getElementById('navbarDropdown');
+        if(dropdown) dropdown.classList.add('active');
+    }
+
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    
+    if (page === 'map' && !leafletMap) initMap();
+    if (page === 'map' && leafletMap) setTimeout(() => leafletMap.invalidateSize(), 200);
+    if (page === 'eda') loadEDA();
+}
+
 // ===== INIT =====
 document.addEventListener("DOMContentLoaded", () => {
-    loadEDA();
     loadMapFilters();
     loadPredictProvinces();
     loadForecastProvinces();
     setupPredictForm();
     setupForecastControls();
+    
+    // Mock features toggle
+    document.querySelectorAll('.feature-toggle').forEach(t => {
+        t.addEventListener('change', () => {
+            const checkedCount = document.querySelectorAll('.feature-toggle:checked').length;
+            const mockRecall = 85.4 - ((8 - checkedCount) * 2.3);
+            document.getElementById('mockRecall').textContent = Math.max(0, mockRecall).toFixed(1) + "%";
+        });
+    });
 });
-
-// ===== HOME / EDA =====
-async function loadEDA() {
-    try {
-        const res = await fetch(API + "/api/eda/summary");
-        const d = await res.json();
-        document.getElementById('statRows').textContent = d.dataset.rows.toLocaleString();
-        document.getElementById('statCols').textContent = d.dataset.columns;
-        document.getElementById('statProvinces').textContent = d.dataset.total_provinces;
-        document.getElementById('statYears').textContent = d.dataset.year_range;
-        renderTargetChart(d.target_distribution);
-        renderClusterChart(d.cluster_distribution);
-        renderMonthlyChart(d.monthly_risk);
-        renderProvinceChart(d.province_risk);
-        renderFeatureTable(d.feature_stats);
-        renderModelInfo(d.model_info);
-    } catch (e) { console.error("EDA error:", e); }
-}
-
-function renderTargetChart(data) {
-    new Chart(document.getElementById('chartTarget'), {
-        type: 'doughnut',
-        data: { labels: ['Aman', 'Berisiko'], datasets: [{ data: [data.Aman, data.Berisiko], backgroundColor: ['#16a34a', '#ef4444'], borderWidth: 0, borderRadius: 4 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, font: { family: 'Inter', size: 12 } } } } }
-    });
-}
-
-function renderClusterChart(data) {
-    new Chart(document.getElementById('chartCluster'), {
-        type: 'bar',
-        data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#3b82f6', '#16a34a', '#f59e0b'], borderRadius: 6, barThickness: 40 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } } }
-    });
-}
-
-function renderMonthlyChart(data) {
-    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    const values = months.map((_, i) => data[i + 1] || 0);
-    new Chart(document.getElementById('chartMonthly'), {
-        type: 'bar',
-        data: { labels: months, datasets: [{ label: 'Jumlah Berisiko', data: values, backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 4, barThickness: 28 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } } }
-    });
-}
-
-function renderProvinceChart(data) {
-    const entries = Object.entries(data).slice(0, 20);
-    new Chart(document.getElementById('chartProvince'), {
-        type: 'bar',
-        data: { labels: entries.map(e => e[0]), datasets: [{ label: 'Jumlah Berisiko', data: entries.map(e => e[1]), backgroundColor: 'rgba(239,68,68,0.65)', borderRadius: 4, barThickness: 14 }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#f3f4f6' } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } } }
-    });
-}
-
-function renderFeatureTable(stats) {
-    const tbody = document.getElementById('featureTableBody');
-    tbody.innerHTML = Object.entries(stats).map(([k, v]) =>
-        `<tr><td><strong>${k}</strong></td><td>${v.min}</td><td>${v.max}</td><td>${v.mean}</td><td>${v.std}</td></tr>`
-    ).join('');
-}
-
-function renderModelInfo(info) {
-    const grid = document.getElementById('modelInfoGrid');
-    const items = [
-        ['Algoritma', info.algorithm], ['Pipeline', info.pipeline],
-        ['Jumlah Cluster', info.clusters], ['Target', info.target],
-        ['Fitur', info.features_used.length + ' fitur']
-    ];
-    grid.innerHTML = items.map(([l, v]) =>
-        `<div class="model-info-item"><div class="info-label">${l}</div><div class="info-value">${v}</div></div>`
-    ).join('');
-}
 
 // ===== MAP =====
 const PROVINCE_NAME_MAP = {
@@ -118,8 +73,10 @@ async function loadMapFilters() {
         const res = await fetch(API + "/api/map/filters");
         const d = await res.json();
         const sel = document.getElementById('filterYear');
-        sel.innerHTML = d.years.map(y => `<option value="${y}">${y}</option>`).join('');
-        sel.value = d.years[d.years.length - 1];
+        if(d.years) {
+            sel.innerHTML = d.years.map(y => `<option value="${y}">${y}</option>`).join('');
+            sel.value = d.years[d.years.length - 1];
+        }
     } catch (e) { console.error("Map filters error:", e); }
 }
 
@@ -135,72 +92,131 @@ function initMap() {
             geojsonLayer = L.geoJSON(data, {
                 style: () => ({ color: '#9ca3af', weight: 1, opacity: 0.6, fillOpacity: 0.15, fillColor: '#d1d5db' }),
                 onEachFeature: (f, layer) => {
-                    layer.bindPopup(`<div class="popup-title">${f.properties.Propinsi}</div><div class="popup-detail">Pilih tahun & bulan untuk melihat status.</div>`);
+                    layer.bindPopup(`<div class="fw-bold mb-1">${f.properties.Propinsi}</div><div class="small text-muted">Klik terapkan filter untuk melihat status.</div>`);
                     layer.on({ mouseover: e => e.target.setStyle({ weight: 2, fillOpacity: 0.4 }), mouseout: e => geojsonLayer.resetStyle(e.target) });
                 }
             }).addTo(leafletMap);
+            loadMapData(); // Auto load when map init
         }).catch(e => console.error("GeoJSON error:", e));
 
     document.getElementById('btnApplyFilter').addEventListener('click', loadMapData);
 }
 
+// ===== TIER 3: INTEGRATION ARCHITECT =====
+
 async function loadMapData() {
+    const btn = document.getElementById('btnApplyFilter');
+    if(!btn) return;
+    const originalText = btn.textContent;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Memuat...';
+    btn.disabled = true;
+
     const year = document.getElementById('filterYear').value;
     const month = document.getElementById('filterMonth').value;
+    const filterCluster = document.getElementById('filterCluster').value;
+    const filterStatus = document.getElementById('filterStatus').value;
+
     try {
         const res = await fetch(`${API}/api/map/data?year=${year}&month=${month}`);
         const d = await res.json();
         mapData = {};
         (d.provinces || []).forEach(p => { mapData[p.province] = p; });
 
+        let countSafe = 0, countRisk = 0;
+        let sumTemp = 0, countTemp = 0;
+
         if (geojsonLayer) {
             geojsonLayer.eachLayer(layer => {
                 const geoName = layer.feature.properties.Propinsi;
                 const apiName = PROVINCE_NAME_MAP[geoName] || geoName;
                 const info = mapData[apiName];
+                
+                let showLayer = true;
+
                 if (info) {
                     const isRisk = info.warning_code === 1;
-                    layer.setStyle({ fillColor: isRisk ? '#ef4444' : '#16a34a', color: isRisk ? '#dc2626' : '#15803d', fillOpacity: 0.5, weight: 1.5 });
-                    layer.setPopupContent(`<div class="popup-title">${geoName}</div><span class="popup-status ${isRisk ? 'danger' : 'safe'}">${info.warning}</span><div class="popup-detail">Cluster: ${info.cluster}<br>Curah Hujan: ${info.avg_rainfall} mm<br>Suhu: ${info.avg_temperature}°C<br>SPI-3: ${info.avg_spi}</div>`);
+                    const clusterStr = info.cluster.toString();
+
+                    // Apply Controls Filter
+                    if(filterCluster !== 'all' && clusterStr !== filterCluster) showLayer = false;
+                    if(filterStatus === 'aman' && isRisk) showLayer = false;
+                    if(filterStatus === 'risiko' && !isRisk) showLayer = false;
+
+                    if(showLayer) {
+                        layer.setStyle({ 
+                            fillColor: isRisk ? '#ef4444' : '#16a34a', 
+                            color: isRisk ? '#dc2626' : '#15803d', 
+                            fillOpacity: 0.8, // Make it look more choropleth
+                            weight: 1.5 
+                        });
+                        layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><span class="badge ${isRisk ? 'bg-danger' : 'bg-success'} mb-2">${info.warning}</span><div class="small text-muted">Cluster: ${info.cluster}<br>Curah Hujan: ${info.avg_rainfall} mm<br>Suhu: ${info.avg_temperature}°C<br>SPI-3: ${info.avg_spi}</div>`);
+                        
+                        if(isRisk) countRisk++;
+                        else countSafe++;
+
+                        sumTemp += info.avg_temperature;
+                        countTemp++;
+                    } else {
+                        // Hidden by filter
+                        layer.setStyle({ fillColor: '#e5e7eb', color: '#d1d5db', fillOpacity: 0.2, weight: 1 });
+                        layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><div class="small text-muted">Dikecualikan oleh filter.</div>`);
+                    }
                 } else {
-                    layer.setStyle({ fillColor: '#d1d5db', color: '#9ca3af', fillOpacity: 0.15, weight: 1 });
-                    layer.setPopupContent(`<div class="popup-title">${geoName}</div><div class="popup-detail">Tidak ada data untuk periode ini.</div>`);
+                    layer.setStyle({ fillColor: '#f3f4f6', color: '#e5e7eb', fillOpacity: 0.3, weight: 1 });
+                    layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><div class="small text-muted">Tidak ada data untuk periode ini.</div>`);
                 }
             });
         }
-        const panel = document.getElementById('mapInfoPanel');
-        const safe = (d.provinces || []).filter(p => p.warning_code === 0).length;
-        const risk = (d.provinces || []).filter(p => p.warning_code === 1).length;
-        panel.innerHTML = `<p class="map-info-text"><strong>Periode:</strong> ${month}/${year}<br><strong style="color:#16a34a">Aman:</strong> ${safe} provinsi | <strong style="color:#ef4444">Berisiko:</strong> ${risk} provinsi</p>`;
-    } catch (e) { console.error("Map data error:", e); }
+        
+        // Update Stats UI
+        document.getElementById('statMapSafe').textContent = countSafe;
+        document.getElementById('statMapRisk').textContent = countRisk;
+        document.getElementById('statMapTemp').textContent = countTemp > 0 ? (sumTemp/countTemp).toFixed(2) + "°C" : "-";
+
+    } catch (e) { 
+        console.error("Map data error:", e);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 }
 
-// ===== PREDIKSI =====
+// ===== PREDIKSI / SIMULATOR =====
+let predictGaugeChart = null;
+
 async function loadPredictProvinces() {
     try {
         const res = await fetch(API + "/api/predict/provinces");
         const d = await res.json();
         const sel = document.getElementById('predictProvince');
-        d.provinces.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.name; opt.textContent = `${p.name} (Cluster ${p.cluster})`;
-            opt.dataset.cluster = p.cluster;
-            sel.appendChild(opt);
-        });
-        sel.addEventListener('change', () => {
-            const opt = sel.options[sel.selectedIndex];
-            document.getElementById('clusterHint').textContent = opt.dataset.cluster !== undefined ? `Cluster ${opt.dataset.cluster} terdeteksi` : '';
-        });
+        if(d.provinces) {
+            d.provinces.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.name; opt.textContent = `${p.name}`;
+                opt.dataset.cluster = p.cluster;
+                sel.appendChild(opt);
+            });
+        }
     } catch (e) { console.error(e); }
 }
 
 function setupPredictForm() {
+    const sliders = ['rainfall', 'spi3', 'temperature', 'wsi', 'solarRad', 'soilMoisture', 'fpar', 'fparZ'];
+    sliders.forEach(id => {
+        const el = document.getElementById(id);
+        const valEl = document.getElementById(id + 'Val');
+        if(el && valEl) {
+            el.addEventListener('input', (e) => {
+                valEl.textContent = e.target.value;
+            });
+        }
+    });
+
     document.getElementById('ewsForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btnPredict');
-        const loader = document.getElementById('predictLoader');
-        btn.disabled = true; loader.style.display = 'block';
-        btn.querySelector('span').textContent = 'Memproses...';
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>MEMPROSES...';
 
         const form = e.target;
         const body = {
@@ -224,28 +240,84 @@ function setupPredictForm() {
         } catch (err) {
             alert("Error: " + err.message);
         } finally {
-            btn.disabled = false; loader.style.display = 'none';
-            btn.querySelector('span').textContent = 'Analisis Prediksi';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles me-2"></i>JALANKAN SIMULASI DETEKSI >';
         }
     });
 }
 
 function showPredictResult(r) {
-    document.getElementById('resultPlaceholder').style.display = 'none';
+    document.getElementById('resultPlaceholder').classList.add('d-none');
     const content = document.getElementById('resultContent');
-    content.classList.remove('hidden');
+    content.classList.remove('d-none');
 
+    const isRisk = r.prediction === 1;
     const badge = document.getElementById('resultBadge');
-    badge.className = 'result-badge ' + (r.prediction === 1 ? 'danger' : 'safe');
-    badge.textContent = r.status;
+    
+    // Set Badge
+    badge.className = 'd-inline-block px-5 py-2 rounded-3 fs-3 fw-bold shadow-sm mb-4 border border-2 ';
+    if(isRisk) {
+        badge.className += 'bg-danger text-white border-danger';
+        badge.textContent = 'AWAS: BERISIKO';
+    } else {
+        badge.className += 'bg-success text-white border-success';
+        badge.textContent = 'AMAN';
+    }
 
-    document.getElementById('resultDetails').innerHTML = `
-        <div class="result-detail-row"><span class="label">Provinsi</span><span class="value">${r.province}</span></div>
-        <div class="result-detail-row"><span class="label">Cluster</span><span class="value">${r.cluster}</span></div>`;
+    document.getElementById('resProv').textContent = r.province;
+    document.getElementById('resCluster').textContent = `Cluster ${r.cluster}`;
 
-    document.getElementById('resultProbability').innerHTML = `
-        <div class="prob-bar-wrapper"><div class="prob-label"><span style="color:#16a34a">Aman</span><span>${(r.probability.aman * 100).toFixed(1)}%</span></div><div class="prob-bar"><div class="prob-fill safe" style="width:${r.probability.aman * 100}%"></div></div></div>
-        <div class="prob-bar-wrapper"><div class="prob-label"><span style="color:#ef4444">Berisiko</span><span>${(r.probability.berisiko * 100).toFixed(1)}%</span></div><div class="prob-bar"><div class="prob-fill danger" style="width:${r.probability.berisiko * 100}%"></div></div></div>`;
+    // Render Gauge Chart for Berisiko Probability
+    const probRisk = r.probability.berisiko * 100;
+    renderGaugeChart(probRisk);
+    
+    // Description text
+    const desc = document.getElementById('resDescription');
+    const probTextSpan = document.getElementById('resProbText');
+    
+    if(isRisk) {
+        desc.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Indikator berada dalam zona <strong>RAWAN</strong>. Peluang bahaya mencapai <strong>${probRisk.toFixed(1)}%</strong>, melampaui ambang batas model. Disarankan segera merencanakan mitigasi kekeringan dan pengaturan pengairan di wilayah ini.`;
+    } else {
+        desc.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> Indikator berada dalam zona <strong>STABIL</strong>. Peluang bahaya (<strong>${probRisk.toFixed(1)}%</strong>) berada di bawah ambang batas bahaya (Threshold). Kondisi diprediksi mendukung pertumbuhan pangan dengan baik.`;
+    }
+}
+
+function renderGaugeChart(probabilityValue) {
+    const ctx = document.getElementById('gaugeChart');
+    if(predictGaugeChart) predictGaugeChart.destroy();
+    
+    const valueEl = document.getElementById('gaugeValue');
+    valueEl.textContent = probabilityValue.toFixed(1) + '%';
+    
+    if(probabilityValue > 50) valueEl.className = 'fw-bold mb-0 text-danger';
+    else valueEl.className = 'fw-bold mb-0 text-success';
+
+    predictGaugeChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Peluang Bahaya', 'Aman'],
+            datasets: [{
+                data: [probabilityValue, 100 - probabilityValue],
+                backgroundColor: [
+                    probabilityValue > 50 ? '#ef4444' : '#10b981', 
+                    '#e5e7eb'
+                ],
+                borderWidth: 0,
+                circumference: 180,
+                rotation: 270
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '80%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            },
+            animation: { animateRotate: true, animateScale: false }
+        }
+    });
 }
 
 // ===== FORECASTING =====
@@ -256,35 +328,51 @@ async function loadForecastProvinces() {
         const res = await fetch(API + "/api/forecast/provinces");
         const d = await res.json();
         const sel = document.getElementById('forecastProvince');
-        sel.innerHTML = d.provinces.map(p => `<option value="${p}">${p}</option>`).join('');
+        if(d.provinces) {
+            sel.innerHTML = d.provinces.map(p => `<option value="${p}">${p}</option>`).join('');
+        }
     } catch (e) { console.error(e); }
 }
 
 function setupForecastControls() {
     const slider = document.getElementById('forecastSteps');
-    slider.addEventListener('input', () => { document.getElementById('stepsValue').textContent = slider.value; });
+    slider.addEventListener('input', () => { 
+        document.getElementById('stepsValue').textContent = `${slider.value} Bulan`; 
+    });
     document.getElementById('btnForecast').addEventListener('click', runForecast);
 }
 
 async function runForecast() {
+    const btn = document.getElementById('btnForecast');
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Memproses...';
+    btn.disabled = true;
+
     const province = document.getElementById('forecastProvince').value;
     const variable = document.getElementById('forecastVariable').value;
     const steps = parseInt(document.getElementById('forecastSteps').value);
 
-    document.getElementById('forecastChartBadge').textContent = variable;
+    const varSelect = document.getElementById('forecastVariable');
+    document.getElementById('forecastChartBadge').textContent = varSelect.options[varSelect.selectedIndex].text;
 
     try {
-        // Load history
         const hRes = await fetch(`${API}/api/forecast/history?province=${encodeURIComponent(province)}&variable=${encodeURIComponent(variable)}`);
+        if(!hRes.ok) throw new Error("Gagal mengambil data historis");
         const hData = await hRes.json();
 
-        // Run forecast
         const fRes = await fetch(`${API}/api/forecast/predict?province=${encodeURIComponent(province)}&steps=${steps}`, { method: "POST" });
+        if(!fRes.ok) throw new Error("Gagal menjalankan forecast");
         const fData = await fRes.json();
 
         renderForecastChart(hData.data, fData.predictions, variable);
         renderForecastTable(fData.predictions);
-    } catch (e) { console.error("Forecast error:", e); alert("Error: " + e.message); }
+    } catch (e) { 
+        console.error("Forecast error:", e); 
+        alert("Error: " + e.message); 
+    } finally {
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+    }
 }
 
 function renderForecastChart(history, predictions, variable) {
@@ -293,7 +381,7 @@ function renderForecastChart(history, predictions, variable) {
 
     const histLabels = history.map(h => h.date);
     const histValues = history.map(h => h.value);
-    const predLabels = predictions.map(p => p.date);
+    const predLabels = predictions.map(p => p.date || `Bulan ${p.step}`);
     const predValues = predictions.map(p => p.predicted[variable] || 0);
 
     const allLabels = [...histLabels, ...predLabels];
@@ -305,17 +393,41 @@ function renderForecastChart(history, predictions, variable) {
         data: {
             labels: allLabels,
             datasets: [
-                { label: 'Historis', data: histDataset, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
-                { label: 'Forecast', data: predDataset, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)', fill: true, tension: 0.3, pointRadius: 3, borderWidth: 2, borderDash: [6, 3] }
+                { 
+                    label: 'Data Historis', 
+                    data: histDataset, 
+                    borderColor: '#3b5d50', 
+                    backgroundColor: 'rgba(59, 93, 80, 0.1)', 
+                    fill: true, 
+                    tension: 0.3, 
+                    pointRadius: 0, 
+                    borderWidth: 2 
+                },
+                { 
+                    label: 'Proyeksi AI (Forecast)', 
+                    data: predDataset, 
+                    borderColor: '#f9bf29', 
+                    backgroundColor: 'rgba(249, 191, 41, 0.1)', 
+                    fill: true, 
+                    tension: 0.3, 
+                    pointRadius: 4, 
+                    pointBackgroundColor: '#ffffff',
+                    borderWidth: 3, 
+                    borderDash: [6, 4] 
+                }
             ]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true, 
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
-            plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter', size: 12 } } } },
+            plugins: { 
+                legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter', size: 13, weight: 'bold' } } },
+                tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', titleFont: { size: 13, family: 'Inter' }, bodyFont: { size: 13, family: 'Inter' }, padding: 10, cornerRadius: 8 }
+            },
             scales: {
-                x: { grid: { display: false }, ticks: { maxTicksLimit: 15, font: { size: 10 } } },
-                y: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 } } }
+                x: { grid: { display: false }, ticks: { maxTicksLimit: 12, font: { size: 11 } } },
+                y: { grid: { color: '#e5e7eb' }, ticks: { font: { size: 12 } } }
             }
         }
     });
@@ -328,7 +440,8 @@ function renderForecastTable(predictions) {
     tbody.innerHTML = predictions.map(p => {
         const d = p.predicted;
         return `<tr>
-            <td><strong>${p.step}</strong></td><td>${p.date}</td>
+            <td class="fw-bold">Bulan ${p.step}</td>
+            <td>${p.date || '-'}</td>
             <td>${d['Rainfall']?.toFixed(2) || '-'}</td>
             <td>${d['SPI - 3 months']?.toFixed(3) || '-'}</td>
             <td>${d['Temperature']?.toFixed(2) || '-'}</td>
@@ -339,4 +452,31 @@ function renderForecastTable(predictions) {
             <td>${d['FPAR - zscore']?.toFixed(3) || '-'}</td>
         </tr>`;
     }).join('');
+}
+
+// ===== EDA (Informasi Sistem) =====
+let edaLoaded = false;
+async function loadEDA() {
+    if(edaLoaded) return;
+    try {
+        const res = await fetch(API + "/api/eda/summary");
+        if(!res.ok) return;
+        const d = await res.json();
+        
+        // Target Doughnut
+        new Chart(document.getElementById('chartEdaTarget'), {
+            type: 'doughnut',
+            data: { labels: ['Aman', 'Berisiko'], datasets: [{ data: [d.target_distribution.Aman, d.target_distribution.Berisiko], backgroundColor: ['#16a34a', '#ef4444'], borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } } }
+        });
+
+        // Cluster Bar
+        new Chart(document.getElementById('chartEdaCluster'), {
+            type: 'bar',
+            data: { labels: Object.keys(d.cluster_distribution), datasets: [{ data: Object.values(d.cluster_distribution), backgroundColor: ['#3b82f6', '#16a34a', '#f59e0b'], borderRadius: 6 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f3f4f6' } } } }
+        });
+
+        edaLoaded = true;
+    } catch (e) { console.error("EDA error:", e); }
 }

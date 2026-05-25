@@ -62,7 +62,8 @@ def load_resources():
     df_master = pd.read_csv(master_path)
     df_master['date'] = pd.to_datetime(df_master['date'])
     df_master['year'] = df_master['date'].dt.year
-    df_master['target_biner'] = df_master['target_ews'].apply(lambda x: 0 if x == 0 else 1)
+    if 'target_ews' in df_master.columns:
+        df_master['target_biner'] = df_master['target_ews'].apply(lambda x: 0 if x == 0 else 1)
 
     # Build province -> cluster mapping (most common cluster per province)
     PROVINCES_LIST = sorted(df_master['region_name'].unique().tolist())
