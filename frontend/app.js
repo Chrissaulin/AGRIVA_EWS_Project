@@ -456,27 +456,129 @@ function renderForecastTable(predictions) {
 
 // ===== EDA (Informasi Sistem) =====
 let edaLoaded = false;
+let edaCharts = {};
+let edaMap = null;
+let edaGeojson = null;
+
 async function loadEDA() {
     if(edaLoaded) return;
+    
+    // Init Map
+    edaMap = L.map('edaMap').setView([-2.5, 118], 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(edaMap);
+
+    fetch('https://raw.githubusercontent.com/superpikar/indonesia-geojson/master/indonesia-province-simple.json')
+        .then(r => r.json())
+        .then(data => {
+            edaGeojson = L.geoJSON(data, {
+                style: () => ({ color: '#9ca3af', weight: 1, opacity: 0.6, fillOpacity: 0.3, fillColor: '#3b82f6' }),
+                onEachFeature: (f, layer) => {
+                    layer.bindPopup(`<div class="fw-bold">${f.properties.Propinsi}</div>`);
+                }
+            }).addTo(edaMap);
+            loadEdaDashboard(); 
+        });
+
+    document.getElementById('btnEdaApply').addEventListener('click', loadEdaDashboard);
+    edaLoaded = true;
+}
+
+async function loadEdaDashboard() {
+    const prov = document.getElementById('edaFilterProvince').value || 'All';
+    const year = document.getElementById('edaFilterYear').value || 'All';
+
     try {
-        const res = await fetch(API + "/api/eda/summary");
-        if(!res.ok) return;
+        const res = await fetch(`${API}/api/eda/dashboard?province=${encodeURIComponent(prov)}&year=${encodeURIComponent(year)}`);
         const d = await res.json();
         
-        // Target Doughnut
-        new Chart(document.getElementById('chartEdaTarget'), {
+        if(d.error) return alert(d.error);
+
+        // Populate filters if empty
+        const provSel = document.getElementById('edaFilterProvince');
+        if(provSel.options.length <= 1) {
+            d.provinces.forEach(p => provSel.insertAdjacentHTML('beforeend', `<option value="${p}">${p}</option>`));
+            d.years.forEach(y => document.getElementById('edaFilterYear').insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`));
+        }
+
+        // KPIs
+        document.getElementById('edaKpiRain').textContent = d.kpis.avg_rainfall + " mm";
+        document.getElementById('edaKpiTemp').textContent = d.kpis.avg_temperature + " °C";
+        document.getElementById('edaKpiStatus').textContent = d.kpis.dominant_status;
+        document.getElementById('edaKpiAnomaly').textContent = d.kpis.max_temp + " °C";
+
+        // Destroy old charts
+        Object.values(edaCharts).forEach(c => c.destroy());
+        edaCharts = {};
+
+        // 1. Target Doughnut
+        edaCharts.target = new Chart(document.getElementById('edaChartTarget'), {
             type: 'doughnut',
-            data: { labels: ['Aman', 'Berisiko'], datasets: [{ data: [d.target_distribution.Aman, d.target_distribution.Berisiko], backgroundColor: ['#16a34a', '#ef4444'], borderWidth: 0 }] },
+            data: { labels: ['Aman', 'Berisiko'], datasets: [{ data: [d.target_proportion.Aman, d.target_proportion.Berisiko], backgroundColor: ['#16a34a', '#ef4444'], borderWidth: 0 }] },
             options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } } }
         });
 
-        // Cluster Bar
-        new Chart(document.getElementById('chartEdaCluster'), {
+        // 2. Soil Moisture Histogram
+        edaCharts.hist = new Chart(document.getElementById('edaChartHist'), {
             type: 'bar',
-            data: { labels: Object.keys(d.cluster_distribution), datasets: [{ data: Object.values(d.cluster_distribution), backgroundColor: ['#3b82f6', '#16a34a', '#f59e0b'], borderRadius: 6 }] },
+            data: { labels: d.soil_moisture_dist.labels, datasets: [{ label: 'Frekuensi', data: d.soil_moisture_dist.data, backgroundColor: '#3b82f6', borderRadius: 4 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f3f4f6' } } } }
         });
 
-        edaLoaded = true;
-    } catch (e) { console.error("EDA error:", e); }
+        // 3. Time Series Line
+        edaCharts.time = new Chart(document.getElementById('edaChartTime'), {
+            type: 'line',
+            data: { 
+                labels: d.time_series.labels, 
+                datasets: [
+                    { label: 'Curah Hujan (mm)', data: d.time_series.rainfall, borderColor: '#3b82f6', backgroundColor: '#3b82f6', yAxisID: 'y' },
+                    { label: 'WSI (%)', data: d.time_series.wsi, borderColor: '#16a34a', backgroundColor: '#16a34a', yAxisID: 'y1' }
+                ] 
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                scales: { 
+                    y: { type: 'linear', position: 'left', title: {display: true, text: 'Curah Hujan'} },
+                    y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: {display: true, text: 'WSI'} }
+                }
+            }
+        });
+
+        // 4. Radar Chart
+        edaCharts.radar = new Chart(document.getElementById('edaChartRadar'), {
+            type: 'radar',
+            data: { labels: d.radar.labels, datasets: [{ label: 'Rata-rata (Scaled)', data: d.radar.data, backgroundColor: 'rgba(249, 191, 41, 0.4)', borderColor: '#f9bf29', pointBackgroundColor: '#f9bf29' }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { r: { suggestedMin: 0, suggestedMax: 100 } } }
+        });
+
+        // 5. Correlation Table
+        const thead = document.getElementById('edaCorrHead');
+        const tbody = document.getElementById('edaCorrBody');
+        const cols = Object.keys(d.correlation);
+        
+        thead.innerHTML = '<th>Var</th>' + cols.map(c => `<th>${c.substring(0,6)}</th>`).join('');
+        tbody.innerHTML = cols.map(c => {
+            return `<tr><td class="fw-bold">${c.substring(0,8)}</td>` + cols.map(c2 => {
+                let val = d.correlation[c][c2];
+                let bg = val > 0.5 ? '#fca5a5' : (val < -0.5 ? '#bfdbfe' : '#f3f4f6');
+                return `<td style="background-color: ${val === 1 ? '#e5e7eb' : bg}">${val}</td>`;
+            }).join('') + '</tr>';
+        }).join('');
+
+        // 6. Map Update
+        if(edaGeojson) {
+            edaGeojson.eachLayer(layer => {
+                const geoName = layer.feature.properties.Propinsi;
+                const apiName = PROVINCE_NAME_MAP[geoName] || geoName;
+                const clusterId = CLUSTER_MAP[apiName];
+                let cColor = '#d1d5db';
+                if(clusterId === 0) cColor = '#3b82f6';
+                if(clusterId === 1) cColor = '#16a34a';
+                if(clusterId === 2) cColor = '#f59e0b';
+                
+                layer.setStyle({ fillColor: cColor, fillOpacity: 0.6, color: '#ffffff', weight: 1 });
+                layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><div class="small">Cluster: ${clusterId}</div>`);
+            });
+        }
+
+    } catch (e) { console.error("Dashboard error:", e); }
 }

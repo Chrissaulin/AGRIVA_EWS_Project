@@ -597,46 +597,137 @@
 
         <!-- ================= NEW PAGE: EDA & DATA ================= -->
         <section class="page" id="page-eda" style="background-color: #f8f9fa; min-height: calc(100vh - 86px);">
-            <div class="container-fluid px-4 py-5">
+            <!-- 1. Bagian Atas: Global Filters (Kendali Utama) -->
+            <div class="bg-white border-bottom py-3 mb-4 sticky-top shadow-sm" style="top: 76px; z-index: 900;">
+                <div class="container-fluid px-4">
+                    <div class="row align-items-end g-3">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Wilayah / Provinsi</label>
+                            <select id="edaFilterProvince" class="form-select bg-light border-0">
+                                <option value="All">Seluruh Indonesia</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tahun</label>
+                            <select id="edaFilterYear" class="form-select bg-light border-0">
+                                <option value="All">Semua Tahun</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button id="btnEdaApply" class="btn btn-dark-custom w-100 fw-bold"><i class="fa-solid fa-filter me-2"></i>Terapkan Filter</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container-fluid px-4 pb-5">
                 <div class="mb-4">
                     <h2 class="fw-bold text-dark">EDA & Analisis Data Historis</h2>
-                    <p class="text-muted mb-0">Eksplorasi distribusi data dan korelasi antar variabel (Machine Learning & Data Mining).</p>
+                    <p class="text-muted mb-0">Eksplorasi dataset EWS secara komprehensif (Sebaran, Korelasi, dan Klaster).</p>
                 </div>
                 
+                <!-- 2. Baris Pertama: KPI Scorecards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-bold mb-1 text-uppercase">Rata-rata Curah Hujan</p>
+                                <h3 class="fw-bold text-info mb-0" id="edaKpiRain">-</h3>
+                            </div>
+                            <div class="bg-info bg-opacity-10 rounded-circle p-3 text-info" style="width:60px; height:60px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-cloud-rain fa-lg"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-bold mb-1 text-uppercase">Suhu Rata-rata</p>
+                                <h3 class="fw-bold text-warning mb-0" id="edaKpiTemp">-</h3>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-3 text-warning" style="width:60px; height:60px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-temperature-half fa-lg"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-bold mb-1 text-uppercase">Status Dominan</p>
+                                <h3 class="fw-bold text-success mb-0" id="edaKpiStatus">-</h3>
+                            </div>
+                            <div class="bg-success bg-opacity-10 rounded-circle p-3 text-success" style="width:60px; height:60px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-chart-pie fa-lg"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-bold mb-1 text-uppercase">Suhu Max Ekstrem</p>
+                                <h3 class="fw-bold text-danger mb-0" id="edaKpiAnomaly">-</h3>
+                            </div>
+                            <div class="bg-danger bg-opacity-10 rounded-circle p-3 text-danger" style="width:60px; height:60px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-fire fa-lg"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Baris Kedua: Distribusi & Proporsi (Univariate) -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-5">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h5 class="fw-bold mb-4 border-bottom pb-2">Proporsi Status EWS (Target)</h5>
+                            <div style="height: 300px; position: relative;">
+                                <canvas id="edaChartTarget"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h5 class="fw-bold mb-4 border-bottom pb-2">Distribusi Soil Moisture (Histogram)</h5>
+                            <div style="height: 300px; position: relative;">
+                                <canvas id="edaChartHist"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Baris Ketiga: Analisis Multivariabel -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-12">
+                        <div class="card border-0 shadow-sm rounded-4 p-4">
+                            <h5 class="fw-bold mb-4 border-bottom pb-2">Tren Waktu: Curah Hujan vs WSI</h5>
+                            <div style="height: 350px; position: relative;">
+                                <canvas id="edaChartTime"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-5">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h5 class="fw-bold mb-4 border-bottom pb-2">Analisis 7 Indikator (Radar)</h5>
+                            <div style="height: 350px; position: relative;">
+                                <canvas id="edaChartRadar"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h5 class="fw-bold mb-4 border-bottom pb-2">Heatmap Korelasi Fitur & Target</h5>
+                            <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                                <table class="table table-borderless table-sm text-center align-middle" id="edaCorrTable" style="font-size: 0.8rem; border-collapse: separate; border-spacing: 2px;">
+                                    <thead class="sticky-top bg-white">
+                                        <tr id="edaCorrHead"></tr>
+                                    </thead>
+                                    <tbody id="edaCorrBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 5. Baris Keempat: Visualisasi Spasial -->
                 <div class="row g-4">
-                    <div class="col-lg-4">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h5 class="fw-bold mb-4">Highlight Menarik <i class="fa-solid fa-lightbulb text-warning ms-2"></i></h5>
-                            <ul class="list-unstyled">
-                                <li class="mb-3 border-bottom pb-2">
-                                    <strong class="text-dark d-block">Distribusi Tidak Seimbang (Imbalanced)</strong>
-                                    <span class="small text-muted">Kasus bahaya (Berisiko) jauh lebih sedikit dibandingkan kasus Aman, sehingga pemodelan menggunakan XGBoost memerlukan penyesuaian *scale_pos_weight*.</span>
-                                </li>
-                                <li class="mb-3 border-bottom pb-2">
-                                    <strong class="text-dark d-block">Korelasi Variabel Cuaca</strong>
-                                    <span class="small text-muted">Curah Hujan dan SPI-3 bulan memiliki korelasi kuat positif. Anomali FPAR dapat langsung mendeteksi stres pada tanaman.</span>
-                                </li>
-                                <li class="mb-3">
-                                    <strong class="text-dark d-block">Klasterisasi Wilayah</strong>
-                                    <span class="small text-muted">Berdasarkan karakteristik agroklimat, 33 Provinsi dibagi menjadi 3 Klaster besar yang memiliki *behavior* iklim berbeda.</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h5 class="fw-bold mb-4">Distribusi Target</h5>
-                            <div style="height: 250px; position: relative;">
-                                <canvas id="chartEdaTarget"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h5 class="fw-bold mb-4">Distribusi Klaster Wilayah</h5>
-                            <div style="height: 250px; position: relative;">
-                                <canvas id="chartEdaCluster"></canvas>
-                            </div>
+                    <div class="col-md-12">
+                        <div class="card border-0 shadow-sm rounded-4 p-4">
+                            <h5 class="fw-bold mb-4 border-bottom pb-2">Peta Sebaran K-Means Cluster Wilayah</h5>
+                            <div id="edaMap" style="height: 500px; width: 100%; border-radius: 12px; z-index: 1;" class="border"></div>
                         </div>
                     </div>
                 </div>
