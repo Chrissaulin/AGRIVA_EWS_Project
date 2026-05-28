@@ -54,18 +54,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ===== MAP =====
 const PROVINCE_NAME_MAP = {
-    "Aceh": "Nangroe A.D.", "Sumatera Utara": "Sumatera Utara", "Sumatera Barat": "Sumatera Barat",
-    "Riau": "Riau", "Jambi": "Jambi", "Sumatera Selatan": "Sumatera Selatan", "Bengkulu": "Bengkulu",
-    "Lampung": "Lampung", "Kepulauan Bangka Belitung": "Bangka Belitung", "Kepulauan Riau": "Kepulauan-riau",
-    "DKI Jakarta": "Dki Jakarta", "Jawa Barat": "Jawa Barat", "Jawa Tengah": "Jawa Tengah",
-    "DI Yogyakarta": "D.I. Yogyakarta", "Jawa Timur": "Jawa Timur", "Banten": "Banten", "Bali": "Bali",
-    "Nusa Tenggara Barat": "Nusatenggara B.", "Nusa Tenggara Timur": "Nusatenggara T.",
-    "Kalimantan Barat": "Kalimantan Barat", "Kalimantan Tengah": "Kalimantan T.",
-    "Kalimantan Selatan": "Kalimantan S.", "Kalimantan Timur": "Kalimantan Timur",
-    "Sulawesi Utara": "Sulawesi Utara", "Sulawesi Tengah": "Sulawesi Tengah",
-    "Sulawesi Selatan": "Sulawesi Selatan", "Sulawesi Tenggara": "Sulawesi Tengg.",
-    "Gorontalo": "Gorontalo", "Sulawesi Barat": "Sulawesi Barat",
-    "Maluku": "Maluku", "Maluku Utara": "Maluku Utara", "Papua": "Papua", "Papua Barat": "Papua Barat"
+    "DI. ACEH": "Nangroe A.D.", "SUMATERA UTARA": "Sumatera Utara", "SUMATERA BARAT": "Sumatera Barat",
+    "RIAU": "Riau", "JAMBI": "Jambi", "SUMATERA SELATAN": "Sumatera Selatan", "BENGKULU": "Bengkulu",
+    "LAMPUNG": "Lampung", "BANGKA BELITUNG": "Bangka Belitung", 
+    "DKI JAKARTA": "Dki Jakarta", "JAWA BARAT": "Jawa Barat", "JAWA TENGAH": "Jawa Tengah",
+    "DAERAH ISTIMEWA YOGYAKARTA": "D.I. Yogyakarta", "JAWA TIMUR": "Jawa Timur", "PROBANTEN": "Banten",
+    "BALI": "Bali", "NUSATENGGARA BARAT": "Nusatenggara B.", "NUSA TENGGARA TIMUR": "Nusatenggara T.",
+    "KALIMANTAN BARAT": "Kalimantan Barat", "KALIMANTAN TENGAH": "Kalimantan T.", "KALIMANTAN SELATAN": "Kalimantan S.",
+    "KALIMANTAN TIMUR": "Kalimantan Timur", "SULAWESI UTARA": "Sulawesi Utara", "SULAWESI TENGAH": "Sulawesi Tengah",
+    "SULAWESI SELATAN": "Sulawesi Selatan", "SULAWESI TENGGARA": "Sulawesi Tengg.", "GORONTALO": "Gorontalo",
+    "MALUKU": "Maluku", "MALUKU UTARA": "Maluku Utara", "IRIAN JAYA BARAT": "Papua Barat", 
+    "IRIAN JAYA TENGAH": "Papua", "IRIAN JAYA TIMUR": "Papua"
 };
 
 async function loadMapFilters() {
@@ -93,7 +92,13 @@ function initMap() {
                 style: () => ({ color: '#9ca3af', weight: 1, opacity: 0.6, fillOpacity: 0.15, fillColor: '#d1d5db' }),
                 onEachFeature: (f, layer) => {
                     layer.bindPopup(`<div class="fw-bold mb-1">${f.properties.Propinsi}</div><div class="small text-muted">Klik terapkan filter untuk melihat status.</div>`);
-                    layer.on({ mouseover: e => e.target.setStyle({ weight: 2, fillOpacity: 0.4 }), mouseout: e => geojsonLayer.resetStyle(e.target) });
+                    layer.on({ 
+                        mouseover: e => e.target.setStyle({ weight: 2, fillOpacity: 0.9 }), 
+                        mouseout: e => {
+                            if(e.target.options.customStyle) e.target.setStyle(e.target.options.customStyle);
+                            else geojsonLayer.resetStyle(e.target);
+                        } 
+                    });
                 }
             }).addTo(leafletMap);
             loadMapData(); // Auto load when map init
@@ -143,12 +148,14 @@ async function loadMapData() {
                     if(filterStatus === 'risiko' && !isRisk) showLayer = false;
 
                     if(showLayer) {
-                        layer.setStyle({ 
+                        const customStyle = { 
                             fillColor: isRisk ? '#ef4444' : '#16a34a', 
                             color: isRisk ? '#dc2626' : '#15803d', 
-                            fillOpacity: 0.8, // Make it look more choropleth
+                            fillOpacity: 0.8, 
                             weight: 1.5 
-                        });
+                        };
+                        layer.setStyle(customStyle);
+                        layer.options.customStyle = customStyle;
                         layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><span class="badge ${isRisk ? 'bg-danger' : 'bg-success'} mb-2">${info.warning}</span><div class="small text-muted">Cluster: ${info.cluster}<br>Curah Hujan: ${info.avg_rainfall} mm<br>Suhu: ${info.avg_temperature}°C<br>SPI-3: ${info.avg_spi}</div>`);
                         
                         if(isRisk) countRisk++;
@@ -158,11 +165,15 @@ async function loadMapData() {
                         countTemp++;
                     } else {
                         // Hidden by filter
-                        layer.setStyle({ fillColor: '#e5e7eb', color: '#d1d5db', fillOpacity: 0.2, weight: 1 });
+                        const hiddenStyle = { fillColor: '#e5e7eb', color: '#d1d5db', fillOpacity: 0.2, weight: 1 };
+                        layer.setStyle(hiddenStyle);
+                        layer.options.customStyle = hiddenStyle;
                         layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><div class="small text-muted">Dikecualikan oleh filter.</div>`);
                     }
                 } else {
-                    layer.setStyle({ fillColor: '#f3f4f6', color: '#e5e7eb', fillOpacity: 0.3, weight: 1 });
+                    const noDataStyle = { fillColor: '#f3f4f6', color: '#e5e7eb', fillOpacity: 0.3, weight: 1 };
+                    layer.setStyle(noDataStyle);
+                    layer.options.customStyle = noDataStyle;
                     layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><div class="small text-muted">Tidak ada data untuk periode ini.</div>`);
                 }
             });
