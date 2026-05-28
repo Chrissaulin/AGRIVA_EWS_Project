@@ -62,7 +62,8 @@ def load_resources():
     df_master = pd.read_csv(master_path)
     df_master['date'] = pd.to_datetime(df_master['date'])
     df_master['year'] = df_master['date'].dt.year
-    df_master['target_biner'] = df_master['target_ews'].apply(lambda x: 0 if x == 0 else 1)
+    if 'target_ews' in df_master.columns:
+        df_master['target_biner'] = df_master['target_ews'].apply(lambda x: 0 if x == 0 else 1)
 
     # Build province -> cluster mapping (most common cluster per province)
     PROVINCES_LIST = sorted(df_master['region_name'].unique().tolist())
@@ -99,65 +100,84 @@ def load_resources():
 
 # ==================== EDA ENDPOINTS ====================
 
-@app.get("/api/eda/summary")
-def eda_summary():
-    """Dataset summary statistics for the Home page"""
-    rows, cols = df_master.shape
-    provinces = PROVINCES_LIST
-    years = sorted(df_master['year'].unique().tolist())
-    year_range = f"{min(years)} - {max(years)}"
+@app.get("/api/eda/dashboard")
+def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All"):
+    """Comprehensive EDA Dashboard Endpoint"""
+    df = df_master.copy()
+    
+    # Global Filters
+    if province != "All" and province in PROVINCES_LIST:
+        df = df[df['region_name'] == province]
+    if year != "All" and year.isdigit():
+        df = df[df['year'] == int(year)]
 
-    # Target distribution (biner)
-    aman_count = int((df_master['target_biner'] == 0).sum())
-    berisiko_count = int((df_master['target_biner'] == 1).sum())
+    if df.empty:
+        return {"error": "No data found for selected filters"}
 
-    # Cluster distribution
-    cluster_dist = df_master['Cluster_Wilayah'].value_counts().sort_index().to_dict()
-    cluster_dist = {f"Cluster {k}": int(v) for k, v in cluster_dist.items()}
-
-    # Feature statistics
-    feature_stats = {}
-    for feat in FEATURES_EWS[:-1]:  # exclude month_extracted
-        if feat in df_master.columns:
-            feature_stats[feat] = {
-                "min": round(float(df_master[feat].min()), 3),
-                "max": round(float(df_master[feat].max()), 3),
-                "mean": round(float(df_master[feat].mean()), 3),
-                "std": round(float(df_master[feat].std()), 3),
-            }
-
-    # Monthly distribution of berisiko
-    monthly_risk = df_master[df_master['target_biner'] == 1].groupby('month_extracted').size()
-    monthly_risk_dict = {int(k): int(v) for k, v in monthly_risk.items()}
-
-    # Province risk count
-    prov_risk = df_master[df_master['target_biner'] == 1].groupby('region_name').size().sort_values(ascending=False)
-    prov_risk_dict = {k: int(v) for k, v in prov_risk.items()}
+    # 1. KPIs
+    avg_rain = float(df['Rainfall'].mean()) if not df.empty else 0
+    avg_temp = float(df['Temperature'].mean()) if not df.empty else 0
+    
+    mode_target = df['target_biner'].mode()
+    dominant_status = "Berisiko" if not mode_target.empty and mode_target.iloc[0] == 1 else "Aman"
+    
+    max_temp = float(df['Temperature'].max()) if not df.empty else 0
+    
+    # 2. Univariate Distributions
+    aman_count = int((df['target_biner'] == 0).sum())
+    berisiko_count = int((df['target_biner'] == 1).sum())
+    
+    # Soil Moisture Histogram (10 bins)
+    hist_counts, hist_bins = np.histogram(df['Soil Moisture (gapfilled historical time series)'].dropna(), bins=10)
+    soil_moisture_dist = {
+        "labels": [f"{round(hist_bins[i], 2)}-{round(hist_bins[i+1], 2)}" for i in range(len(hist_counts))],
+        "data": hist_counts.tolist()
+    }
+    
+    # 3. Multivariate
+    # Time Series: Rainfall vs WSI per month
+    ts_data = df.groupby('month_extracted')[['Rainfall', 'Water Satisfaction Index (WSI)']].mean().reset_index()
+    time_series = {
+        "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        "rainfall": [float(ts_data[ts_data['month_extracted'] == m]['Rainfall'].mean()) if m in ts_data['month_extracted'].values else 0 for m in range(1, 13)],
+        "wsi": [float(ts_data[ts_data['month_extracted'] == m]['Water Satisfaction Index (WSI)'].mean()) if m in ts_data['month_extracted'].values else 0 for m in range(1, 13)]
+    }
+    
+    # Radar Chart: 7 Indicators (Scaled by their max to fit 0-100 radar)
+    radar_features = ['Rainfall', 'SPI - 3 months', 'Temperature', 'Water Satisfaction Index (WSI)', 'Solar Radiation', 'Soil Moisture (gapfilled historical time series)', 'FPAR']
+    radar_data = []
+    for f in radar_features:
+        f_max = df_master[f].max()
+        f_min = df_master[f].min()
+        f_val = df[f].mean()
+        # min-max scaling to 0-100
+        scaled = ((f_val - f_min) / (f_max - f_min)) * 100 if f_max != f_min else 0
+        radar_data.append(round(float(scaled), 2))
+        
+    # Correlation Heatmap
+    corr_cols = radar_features + ['target_biner']
+    corr_matrix = df[corr_cols].corr().fillna(0).round(2).to_dict()
 
     return {
-        "dataset": {
-            "rows": rows,
-            "columns": cols,
-            "year_range": year_range,
-            "total_provinces": len(provinces),
-            "provinces": provinces,
+        "kpis": {
+            "avg_rainfall": round(avg_rain, 2),
+            "avg_temperature": round(avg_temp, 2),
+            "dominant_status": dominant_status,
+            "max_temp": round(max_temp, 2)
         },
-        "target_distribution": {
+        "target_proportion": {
             "Aman": aman_count,
-            "Berisiko": berisiko_count,
-            "total": aman_count + berisiko_count,
+            "Berisiko": berisiko_count
         },
-        "cluster_distribution": cluster_dist,
-        "feature_stats": feature_stats,
-        "monthly_risk": monthly_risk_dict,
-        "province_risk": prov_risk_dict,
-        "model_info": {
-            "algorithm": "XGBoost Classifier",
-            "pipeline": "SMOTE → StandardScaler → XGBoost",
-            "clusters": 3,
-            "features_used": FEATURES_EWS,
-            "target": "Binary (Aman / Berisiko)",
-        }
+        "soil_moisture_dist": soil_moisture_dist,
+        "time_series": time_series,
+        "radar": {
+            "labels": ["Rainfall", "SPI-3", "Temp", "WSI", "Solar Rad", "Soil Moist", "FPAR"],
+            "data": radar_data
+        },
+        "correlation": corr_matrix,
+        "years": sorted([int(y) for y in df_master['year'].unique()]),
+        "provinces": PROVINCES_LIST
     }
 
 
