@@ -347,15 +347,20 @@ def forecast_predict(province: str, steps: int = 3):
     if prov_data.empty:
         raise HTTPException(status_code=404, detail=f"No forecast data for: {province}")
 
-    # We need lag features from the last rows
-    lag_cols = [col for col in prov_data.columns if '_lag_' in col]
-    time_features = ['year', 'month', 'day', 'dayofyear', 'weekofyear']
-    prov_cols = [col for col in prov_data.columns if col.startswith('region_name_')]
-    feature_cols = time_features + prov_cols + lag_cols
+    # Use exact feature names from model
+    feature_cols = list(forecast_model.feature_names_in_)
+    prov_cols = [c for c in feature_cols if c.startswith('region_name_')]
+    lag_src_cols = ['Rainfall', 'Temperature', 'Soil Moisture (gapfilled historical time series)']
 
     # Get the last row as starting point
     last_row = prov_data.iloc[-1].copy()
     last_date = last_row['date']
+    
+    # Initialize lag features into last_row for the very first step
+    for col in lag_src_cols:
+        last_row[f'{col}_lag_1'] = prov_data.iloc[-1][col] if len(prov_data) >= 1 else 0
+        last_row[f'{col}_lag_2'] = prov_data.iloc[-2][col] if len(prov_data) >= 2 else 0
+        last_row[f'{col}_lag_3'] = prov_data.iloc[-3][col] if len(prov_data) >= 3 else 0
 
     predictions = []
 
@@ -373,28 +378,16 @@ def forecast_predict(province: str, steps: int = 3):
 
         # Province one-hot encoding
         for col in prov_cols:
-            row_features[col] = last_row[col] if col in last_row else 0
+            row_features[col] = 1 if f"region_name_{province}" == col else 0
 
         # Lag features - shift
-        lag_src_cols = ['Rainfall', 'Temperature', 'Soil Moisture (gapfilled historical time series)']
         for col in lag_src_cols:
             for i in [1, 2, 3]:
                 lag_key = f'{col}_lag_{i}'
-                if i == 1:
-                    row_features[lag_key] = float(last_row[col]) if col in last_row else 0
-                elif i == 2:
-                    prev_lag = f'{col}_lag_1'
-                    row_features[lag_key] = float(last_row[prev_lag]) if prev_lag in last_row else 0
-                elif i == 3:
-                    prev_lag = f'{col}_lag_2'
-                    row_features[lag_key] = float(last_row[prev_lag]) if prev_lag in last_row else 0
+                row_features[lag_key] = float(last_row[lag_key])
 
-        # Make sure all feature columns are present
-        X_pred = pd.DataFrame([row_features])
-        for col in feature_cols:
-            if col not in X_pred.columns:
-                X_pred[col] = 0
-        X_pred = X_pred[feature_cols]
+        # Make sure all feature columns are present in exact order
+        X_pred = pd.DataFrame([row_features], columns=feature_cols).fillna(0)
 
         # Predict
         pred = forecast_model.predict(X_pred)[0]
