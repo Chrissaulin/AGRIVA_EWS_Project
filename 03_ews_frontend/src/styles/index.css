@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-neutral-50 text-neutral-900 font-sans antialiased overflow-x-hidden selection:bg-sage-200 selection:text-neutral-900;
+  }
+}
+
+@layer components {
+  /* Bento Box Card Component */
+  .bento-card {
+    @apply bg-white border-2 border-neutral-900 rounded-2xl shadow-hard transition-all duration-200 overflow-hidden relative;
+  }
+  
+  .bento-card:hover {
+    @apply shadow-hard-lg border-neutral-950;
+  }
+
+  /* Interactive Button/Card Component */
+  .bento-interactive {
+    @apply cursor-pointer transition-all duration-150 active:translate-x-[2px] active:translate-y-[2px] active:shadow-hard-sm;
+  }
+
+  .bento-button {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-sage-300 text-neutral-900 font-bold border-2 border-neutral-900 rounded-xl shadow-hard hover:bg-sage-400 bento-interactive uppercase tracking-wide text-sm;
+  }
+
+  .bento-button-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-neutral-900 font-bold border-2 border-neutral-900 rounded-xl shadow-hard hover:bg-neutral-100 bento-interactive uppercase tracking-wide text-sm;
+  }
+  
+  .bento-input {
+    @apply bg-neutral-50 border-2 border-neutral-900 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-0 focus:border-sage-500 focus:shadow-[4px_4px_0px_0px_#22c55e] transition-all;
+  }
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-left: 1px solid #e5e5e5;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a3a3a3;
+}
+
+/* Range Slider Override */
+.range-slider {
+  @apply w-full h-2 bg-neutral-200 rounded-full outline-none appearance-none cursor-pointer border border-neutral-300;
+}
+.range-slider::-webkit-slider-thumb {
+  @apply appearance-none w-5 h-5 bg-sage-400 border-2 border-neutral-900 rounded-full cursor-pointer hover:scale-110 transition-transform shadow-[2px_2px_0px_0px_#171717];
+}
+
+/* Leaflet Overrides */
+.leaflet-container {
+  background: #f8fafc !important; /* slate-50 */
+  border-radius: 1rem;
+}
+.custom-leaflet-tooltip {
+  background-color: white !important;
+  border: 2px solid #171717 !important;
+  border-radius: 1rem !important;
+  box-shadow: 4px 4px 0px 0px rgba(23, 23, 23, 1) !important;
+  padding: 0 !important;
+  color: #171717 !important;
+  font-family: inherit !important;
+}
+.leaflet-tooltip-top:before {
+  border-top-color: #171717 !important;
+  bottom: -2px !important;
+}
+.leaflet-tooltip-bottom:before {
+  border-bottom-color: #171717 !important;
+  top: -2px !important;
+}
+.leaflet-tooltip-left:before {
+  border-left-color: #171717 !important;
+  right: -2px !important;
+}
+.leaflet-tooltip-right:before {
+  border-right-color: #171717 !important;
+  left: -2px !important;
+}
+
+/* Recharts Overrides */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #e5e5e5 !important;
+}

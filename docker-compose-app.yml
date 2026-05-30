@@ -1,0 +1,29 @@
+services:
+
+  ews_backend:
+    build: ./02_ews_backend
+    container_name: agriva_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Sinkronisasi kode backend lokal agar hot-reload uvicorn aktif
+      - ./02_ews_backend:/app
+      # Mount folder dapur_jupyter ke root container agar path relative main.py menemukan file .pkl & data CSV secara identik
+      - ./01_dapur_jupyter:/01_dapur_jupyter
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - DATABASE_URL=
+
+  ews_frontend:
+    build: ./03_ews_frontend
+    container_name: agriva_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      # Sinkronisasi kode frontend lokal agar Vite HMR aktif
+      - ./03_ews_frontend:/app
+      # Mencegah penulisan ulang node_modules container oleh file Windows lokal
+      - /app/node_modules
+    depends_on:
+      - ews_backend
