@@ -22,6 +22,8 @@ services:
       - "8001:8001"
     environment:
       DATABASE_URL: postgresql://agriva_user:agriva_pass@db:5432/agriva_db
+    volumes:
+      - ./01_dapur_jupyter/data:/app/raw_data:ro
     networks:
       - agriva_network
 

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
-from .database import Base
+from database import Base
 
 class Province(Base):
     __tablename__ = "province"
@@ -28,6 +28,8 @@ class HistoricalMetric(Base):
     target_biner = Column(Integer)
     month_extracted = Column(Integer)
     year = Column(Integer)
+    dayofyear = Column(Integer)
+    weekofyear = Column(Integer)
     # Ensure one record per province per date
     __table_args__ = (UniqueConstraint('province_id', 'date', name='_province_date_uc'),)
     province = relationship("Province", back_populates="metrics")
@@ -47,5 +49,7 @@ class ForecastRecord(Base):
     fpar_zscore = Column(Float)
     month_extracted = Column(Integer)
     year = Column(Integer)
+    dayofyear = Column(Integer)
+    weekofyear = Column(Integer)
     __table_args__ = (UniqueConstraint('province_id', 'date', name='_forecast_province_date_uc'),)
     province = relationship("Province")
