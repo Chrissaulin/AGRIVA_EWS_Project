@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
+from database import engine, get_db
 from typing import List, Optional
 
 app = FastAPI(title="AGRIVA EWS API", version="2.0")
@@ -22,6 +23,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Health check endpoint
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
 
 # --- Paths ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -57,45 +63,59 @@ def load_resources():
     global df_master, df_forecast, ews_pipelines, forecast_model, province_encoder
     global PROVINCES_LIST, CLUSTER_MAP
 
-    # Load master data
-    master_path = os.path.join(DATA_DIR, "data_master_clustered.csv")
-    df_master = pd.read_csv(master_path)
-    df_master['date'] = pd.to_datetime(df_master['date'])
-    df_master['year'] = df_master['date'].dt.year
-    if 'target_ews' in df_master.columns:
-        df_master['target_biner'] = df_master['target_ews'].apply(lambda x: 0 if x == 0 else 1)
+    try:
+        # Load province mappings
+        province_df = pd.read_sql("SELECT name, cluster_wilayah FROM province", con=engine)
+        PROVINCES_LIST = province_df['name'].tolist()
+        CLUSTER_MAP = dict(zip(province_df['name'], province_df['cluster_wilayah']))
 
-    # Build province -> cluster mapping (most common cluster per province)
-    PROVINCES_LIST = sorted(df_master['region_name'].unique().tolist())
-    for prov in PROVINCES_LIST:
-        cluster = df_master[df_master['region_name'] == prov]['Cluster_Wilayah'].mode().values[0]
-        CLUSTER_MAP[prov] = int(cluster)
+        # Load historical metrics
+        df_master = pd.read_sql(
+            "SELECT hm.*, p.name as region_name FROM historical_metric hm JOIN province p ON hm.province_id = p.id",
+            con=engine,
+        )
+        df_master['date'] = pd.to_datetime(df_master['date'])
+        df_master['year'] = df_master['date'].dt.year
+        if 'target_ews' in df_master.columns:
+            df_master['target_biner'] = df_master['target_ews'].apply(lambda x: 0 if x == 0 else 1)
+        else:
+            df_master['target_biner'] = None
 
-    # Load EWS pipelines
-    for cid in [0, 1, 2]:
-        path = os.path.join(MODEL_DIR, f"pipeline_ews_biner_cluster_{cid}.pkl")
-        if os.path.exists(path):
-            ews_pipelines[cid] = joblib.load(path)
-
-    # Load forecast resources
-    forecast_path = os.path.join(MODEL_DIR, "model_forecast_global.pkl")
-    if os.path.exists(forecast_path):
-        forecast_model = joblib.load(forecast_path)
-
-    encoder_path = os.path.join(MODEL_DIR, "encoder_provinsi.pkl")
-    if os.path.exists(encoder_path):
-        province_encoder = joblib.load(encoder_path)
-
-    # Load forecast-ready data
-    forecast_data_path = os.path.join(DATA_DIR, "data_forecast_ready.csv")
-    if os.path.exists(forecast_data_path):
-        df_forecast = pd.read_csv(forecast_data_path)
+        # Load forecast records
+        df_forecast = pd.read_sql(
+            "SELECT fr.*, p.name as region_name FROM forecast_record fr JOIN province p ON fr.province_id = p.id",
+            con=engine,
+        )
         df_forecast['date'] = pd.to_datetime(df_forecast['date'])
 
-    print("[OK] All resources loaded successfully!")
-    print(f"   Provinces: {len(PROVINCES_LIST)}")
-    print(f"   EWS Pipelines: {list(ews_pipelines.keys())}")
-    print(f"   Forecast Model: {'Loaded' if forecast_model else 'Not Found'}")
+        # Load EWS pipelines
+        for cid in [0, 1, 2]:
+            path = os.path.join(MODEL_DIR, f"pipeline_ews_biner_cluster_{cid}.pkl")
+            if os.path.exists(path):
+                ews_pipelines[cid] = joblib.load(path)
+
+        # Load forecast model and encoder
+        forecast_path = os.path.join(MODEL_DIR, "model_forecast_global.pkl")
+        if os.path.exists(forecast_path):
+            forecast_model = joblib.load(forecast_path)
+        encoder_path = os.path.join(MODEL_DIR, "encoder_provinsi.pkl")
+        if os.path.exists(encoder_path):
+            province_encoder = joblib.load(encoder_path)
+
+        print("[OK] All resources loaded successfully!")
+        print(f"   Provinces: {len(PROVINCES_LIST)}")
+        print(f"   EWS Pipelines: {list(ews_pipelines.keys())}")
+        print(f"   Forecast Model: {'Loaded' if forecast_model else 'Not Found'}")
+    except FileNotFoundError as e:
+        # Fallback when CSV files are not present in the container
+        print(f"[WARN] Resource file not found: {e}. Skipping CSV load.")
+        df_master = pd.DataFrame()
+        df_forecast = pd.DataFrame()
+        PROVINCES_LIST = []
+        CLUSTER_MAP = {}
+        ews_pipelines = {}
+        forecast_model = None
+        province_encoder = None
 
 
 # ==================== EDA ENDPOINTS ====================
@@ -184,9 +204,25 @@ def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All"):
 # ==================== MAP ENDPOINTS ====================
 
 @app.get("/api/map/data")
-def map_data(year: int, month: int):
-    """Get province-level warning data for the map"""
-    filtered = df_master[(df_master['year'] == year) & (df_master['month_extracted'] == month)]
+
+def map_data(year: Optional[str] = None, month: Optional[str] = None):
+    """
+    Get province-level warning data for the map.
+    If year or month are missing/empty strings, use the latest available values.
+    """
+    # Convert empty strings to None and cast to int when possible
+    year_val = None if (year is None or year == "") else int(year)
+    month_val = None if (month is None or month == "") else int(month)
+
+    # Determine defaults if missing
+    if year_val is None or month_val is None:
+        if not df_master.empty:
+            latest = df_master.sort_values(['year', 'month_extracted']).iloc[-1]
+            year_val = year_val or int(latest['year'])
+            month_val = month_val or int(latest['month_extracted'])
+        # Old duplicate logic removed - using year_val and month_val above
+
+    filtered = df_master[(df_master['year'] == year_val) & (df_master['month_extracted'] == month_val)]
 
     if filtered.empty:
         return {"provinces": [], "message": "No data found for the selected period."}
@@ -219,13 +255,17 @@ def map_data(year: int, month: int):
             "avg_spi": avg_spi,
         })
 
-    return {"provinces": result, "year": year, "month": month}
+    return {"provinces": result, "year": year_val, "month": month_val}
 
 
 @app.get("/api/map/filters")
 def map_filters():
     """Get available years and months for map filters"""
-    years = sorted(df_master['year'].unique().tolist())
+    # Derive years from the date column to ensure proper integer values
+    if not df_master.empty:
+        years = sorted(df_master['date'].dt.year.unique())
+    else:
+        years = []
     months = list(range(1, 13))
     return {"years": [int(y) for y in years], "months": months}
 
