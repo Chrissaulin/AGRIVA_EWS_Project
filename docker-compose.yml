@@ -11,6 +11,8 @@ services:
       - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
+    networks:
+      - agriva_network
   backend:
     build: ./backend
     container_name: agriva_backend
@@ -20,5 +22,12 @@ services:
       - "8001:8001"
     environment:
       DATABASE_URL: postgresql://agriva_user:agriva_pass@db:5432/agriva_db
+    networks:
+      - agriva_network
+
 volumes:
   pg_data:
+
+networks:
+  agriva_network:
+    external: true
