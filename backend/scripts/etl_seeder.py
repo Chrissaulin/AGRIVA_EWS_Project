@@ -4,11 +4,12 @@ import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
-# Ensure backend directory is in python path so we can import from database and models
+# Menambahkan root folder backend ke system path agar database & models bisa di-import
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from database import engine, Base, get_db
+from database import engine, Base
 from models import Province, HistoricalMetric
 
+# Sesuai dengan konfigurasi volume di docker-compose.yml
 RAW_DATA_DIR = "/app/raw_data"
 
 def run_etl():
@@ -44,7 +45,6 @@ def run_etl():
 
     # Merge on date and region_name
     print("Merging DataFrames...")
-    # Base is df1 because it has raw climate features
     merged = pd.merge(df1, df2[['date', 'region_name', 'Cluster_Wilayah', 'target_biner', 'month_extracted']], on=['date', 'region_name'], how='left')
     merged = pd.merge(merged, df3[['date', 'region_name', 'year', 'dayofyear', 'weekofyear']], on=['date', 'region_name'], how='left')
 
@@ -59,14 +59,13 @@ def run_etl():
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     db = SessionLocal()
 
-    # Get unique provinces and their clusters
     province_info = merged[['region_name', 'Cluster_Wilayah']].drop_duplicates(subset=['region_name'])
     province_map = {}
+    
     for _, row in province_info.iterrows():
         prov_name = row['region_name']
         cluster = int(row['Cluster_Wilayah']) if pd.notnull(row['Cluster_Wilayah']) else None
         
-        # Insert or get
         prov = db.query(Province).filter(Province.name == prov_name).first()
         if not prov:
             prov = Province(name=prov_name, cluster_wilayah=cluster)
@@ -88,20 +87,13 @@ def run_etl():
         'FPAR - zscore': 'fpar_zscore'
     }
     
-    # We only need specific columns for HistoricalMetric
     final_cols = ['date', 'region_name'] + list(rename_map.keys()) + ['target_biner', 'month_extracted', 'year', 'dayofyear', 'weekofyear']
     metrics_df = merged[final_cols].rename(columns=rename_map).copy()
     
     metrics_df['province_id'] = metrics_df['region_name'].map(province_map)
     metrics_df.drop(columns=['region_name'], inplace=True)
-
-    # Convert pandas datetime back to string or let SQLAlchemy handle it
-    # metrics_df['date'] = metrics_df['date'].dt.date
-
-    # Drop duplicates in case of overlaps in original data
     metrics_df.drop_duplicates(subset=['province_id', 'date'], inplace=True)
 
-    # Insert into database using chunking
     print("Loading data into historical_metric...")
     metrics_df.to_sql('historical_metric', con=engine, if_exists='append', index=False, chunksize=10000)
     
