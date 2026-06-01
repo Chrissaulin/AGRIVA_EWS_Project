@@ -1,0 +1,18 @@
+# docker-compose.frontend.yml
+# Option 3 – Frontend UI container (local development only)
+
+services:
+  frontend:
+    image: nginx:alpine
+    container_name: agriva_frontend
+    ports:
+      - "5174:80"   # expose on localhost:5174
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro   # serve static files
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - agriva_network
+
+networks:
+  agriva_network:
+    external: true
