@@ -1,4 +1,4 @@
-const API = "http://localhost:8001";
+const API = "";
 let leafletMap, geojsonLayer, mapData = {};
 
 // ===== TIER 2: FRONTEND LOGIC ENGINEER =====
@@ -71,10 +71,16 @@ async function loadMapFilters() {
     try {
         const res = await fetch(API + "/api/map/filters");
         const d = await res.json();
-        const sel = document.getElementById('filterYear');
+        const yearSel = document.getElementById('filterYear');
+        const monthSel = document.getElementById('filterMonth');
         if(d.years) {
-            sel.innerHTML = d.years.map(y => `<option value="${y}">${y}</option>`).join('');
-            sel.value = d.years[d.years.length - 1];
+            yearSel.innerHTML = d.years.map(y => `<option value="${y}">${y}</option>`).join('');
+            yearSel.value = d.years[d.years.length - 1];
+        }
+        if(d.months) {
+            const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            monthSel.innerHTML = d.months.map(m => `<option value="${m}">${monthNames[m-1]}</option>`).join('');
+            monthSel.value = d.months[d.months.length - 1];
         }
     } catch (e) { console.error("Map filters error:", e); }
 }
