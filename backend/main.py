@@ -72,36 +72,35 @@ def load_resources():
         CLUSTER_MAP[prov] = int(cluster)
 
     # Load EWS pipelines
-    for cid in [0, 1, 2]:
-        path = os.path.join(MODEL_DIR, f"pipeline_ews_biner_cluster_{cid}.pkl")
+    ews_pipelines = {}
+    for cluster_id in [0, 1, 2]:
+        path = os.path.join(MODEL_DIR, f"pipeline_ews_biner_cluster_{cluster_id}.pkl")
         if os.path.exists(path):
-            ews_pipelines[cid] = joblib.load(path)
+            ews_pipelines[cluster_id] = joblib.load(path)
 
-    # Load forecast resources
+    # Load forecast resources (global MultiOutputRegressor)
     forecast_path = os.path.join(MODEL_DIR, "model_forecast_global.pkl")
     if os.path.exists(forecast_path):
         forecast_model = joblib.load(forecast_path)
 
-    encoder_path = os.path.join(MODEL_DIR, "encoder_provinsi.pkl")
-    if os.path.exists(encoder_path):
-        province_encoder = joblib.load(encoder_path)
-
-    # Load forecast-ready data
+    # We will use df_forecast for forecasting (loaded from data_forecast_ready.csv)
     forecast_data_path = os.path.join(DATA_DIR, "data_forecast_ready.csv")
     if os.path.exists(forecast_data_path):
         df_forecast = pd.read_csv(forecast_data_path)
         df_forecast['date'] = pd.to_datetime(df_forecast['date'])
+    else:
+        df_forecast = df_master.copy()
 
     print("[OK] All resources loaded successfully!")
     print(f"   Provinces: {len(PROVINCES_LIST)}")
-    print(f"   EWS Pipelines: {list(ews_pipelines.keys())}")
+    print(f"   EWS Pipelines: {'Loaded' if ews_pipelines else 'Not Found'}")
     print(f"   Forecast Model: {'Loaded' if forecast_model else 'Not Found'}")
 
 
 # ==================== EDA ENDPOINTS ====================
 
 @app.get("/api/eda/dashboard")
-def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All"):
+def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All", dist_feature: Optional[str] = "Soil Moisture (gapfilled historical time series)"):
     """Comprehensive EDA Dashboard Endpoint"""
     df = df_master.copy()
     
@@ -127,12 +126,15 @@ def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All"):
     aman_count = int((df['target_biner'] == 0).sum())
     berisiko_count = int((df['target_biner'] == 1).sum())
     
-    # Soil Moisture Histogram (10 bins)
-    hist_counts, hist_bins = np.histogram(df['Soil Moisture (gapfilled historical time series)'].dropna(), bins=10)
-    soil_moisture_dist = {
-        "labels": [f"{round(hist_bins[i], 2)}-{round(hist_bins[i+1], 2)}" for i in range(len(hist_counts))],
-        "data": hist_counts.tolist()
-    }
+    # Dynamic Feature Histogram (10 bins)
+    if dist_feature and dist_feature in df.columns:
+        hist_counts, hist_bins = np.histogram(df[dist_feature].dropna(), bins=10)
+        feature_dist = {
+            "labels": [f"{round(hist_bins[i], 2)}-{round(hist_bins[i+1], 2)}" for i in range(len(hist_counts))],
+            "data": hist_counts.tolist()
+        }
+    else:
+        feature_dist = {"labels": [], "data": []}
     
     # 3. Multivariate
     # Time Series: Rainfall vs WSI per month
@@ -154,9 +156,24 @@ def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All"):
         scaled = ((f_val - f_min) / (f_max - f_min)) * 100 if f_max != f_min else 0
         radar_data.append(round(float(scaled), 2))
         
-    # Correlation Heatmap
-    corr_cols = radar_features + ['target_biner']
-    corr_matrix = df[corr_cols].corr().fillna(0).round(2).to_dict()
+    # Scatter Plot Data (Sampled)
+    scatter_df = df.sample(n=min(300, len(df)), random_state=42)[['Rainfall', 'Soil Moisture (gapfilled historical time series)', 'target_biner']].dropna()
+    scatter_data = {
+        "aman": [{"x": float(row['Rainfall']), "y": float(row['Soil Moisture (gapfilled historical time series)'])} for _, row in scatter_df[scatter_df['target_biner'] == 0].iterrows()],
+        "berisiko": [{"x": float(row['Rainfall']), "y": float(row['Soil Moisture (gapfilled historical time series)'])} for _, row in scatter_df[scatter_df['target_biner'] == 1].iterrows()]
+    }
+
+    # Data Table Summary
+    if province == "All":
+        table_df = df.groupby('region_name')[radar_features + ['target_biner']].mean().reset_index()
+        table_df['target_biner'] = df.groupby('region_name')['target_biner'].sum().reset_index()['target_biner']
+        table_df = table_df.head(15).round(2)
+        table_data = table_df.rename(columns={'region_name': 'Kategori'}).to_dict(orient='records')
+    else:
+        table_df = df.groupby('year')[radar_features + ['target_biner']].mean().reset_index()
+        table_df['target_biner'] = df.groupby('year')['target_biner'].sum().reset_index()['target_biner']
+        table_df = table_df.head(15).round(2)
+        table_data = table_df.rename(columns={'year': 'Kategori'}).to_dict(orient='records')
 
     return {
         "kpis": {
@@ -169,13 +186,14 @@ def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All"):
             "Aman": aman_count,
             "Berisiko": berisiko_count
         },
-        "soil_moisture_dist": soil_moisture_dist,
+        "feature_dist": feature_dist,
         "time_series": time_series,
         "radar": {
-            "labels": ["Rainfall", "SPI-3", "Temp", "WSI", "Solar Rad", "Soil Moist", "FPAR"],
+            "labels": ["Curah Hujan", "Indeks Kekeringan (SPI)", "Suhu Udara", "Kecukupan Air (WSI)", "Radiasi Matahari", "Kelembaban Tanah", "Pertumbuhan Vegetasi (FPAR)"],
             "data": radar_data
         },
-        "correlation": corr_matrix,
+        "scatter": scatter_data,
+        "table_data": table_data,
         "years": sorted([int(y) for y in df_master['year'].unique()]),
         "provinces": PROVINCES_LIST
     }
@@ -265,21 +283,36 @@ def predict_ews(req: PredictionRequest):
         raise HTTPException(status_code=400, detail=f"Model for cluster {cluster_id} not found.")
 
     pipeline = ews_pipelines[cluster_id]
+    threshold = 0.5
 
-    features = np.array([[
-        req.Rainfall,
-        req.SPI_3_months,
-        req.Temperature,
-        req.WSI,
-        req.Solar_Radiation,
-        req.Soil_Moisture,
-        req.FPAR,
-        req.FPAR_zscore,
-        req.month_extracted,
-    ]])
+    # Get latest historical row for this province to fill in lag and rolling features
+    prov_data = df_master[df_master['region_name'] == req.province].sort_values('date')
+    if prov_data.empty:
+        raise HTTPException(status_code=404, detail="Province data not found")
+    
+    last_row = prov_data.iloc[-1].copy()
+    
+    # Overwrite the core features with the user's simulation inputs
+    last_row['Rainfall'] = req.Rainfall
+    last_row['SPI - 3 months'] = req.SPI_3_months
+    last_row['Temperature'] = req.Temperature
+    last_row['Water Satisfaction Index (WSI)'] = req.WSI
+    last_row['Solar Radiation'] = req.Solar_Radiation
+    last_row['Soil Moisture (gapfilled historical time series)'] = req.Soil_Moisture
+    last_row['FPAR'] = req.FPAR
+    last_row['FPAR - zscore'] = req.FPAR_zscore
+    last_row['month_extracted'] = req.month_extracted
 
-    prediction = int(pipeline.predict(features)[0])
+    # Ensure all required features are present in the exact order
+    feature_cols = list(pipeline.feature_names_in_)
+    features = pd.DataFrame([last_row])[feature_cols].fillna(0)
+
+    # Predict probability
     proba = pipeline.predict_proba(features)[0]
+    prob_berisiko = float(proba[1])
+    
+    # Apply custom threshold
+    prediction = 1 if prob_berisiko >= threshold else 0
 
     return {
         "province": req.province,
@@ -288,7 +321,7 @@ def predict_ews(req: PredictionRequest):
         "status": "Berisiko" if prediction == 1 else "Aman",
         "probability": {
             "aman": round(float(proba[0]), 4),
-            "berisiko": round(float(proba[1]), 4),
+            "berisiko": round(prob_berisiko, 4),
         }
     }
 
@@ -332,66 +365,65 @@ def forecast_history(province: str, variable: Optional[str] = "Rainfall"):
 @app.post("/api/forecast/predict")
 def forecast_predict(province: str, steps: int = 3):
     """Forecast future dekads for a province"""
-    if forecast_model is None or province_encoder is None:
+    if forecast_model is None:
         raise HTTPException(status_code=500, detail="Forecast model not loaded.")
 
     if province not in PROVINCES_LIST:
         raise HTTPException(status_code=400, detail=f"Province '{province}' not found.")
 
-    if steps < 1 or steps > 36:
-        raise HTTPException(status_code=400, detail="Steps must be between 1 and 36.")
+    if steps < 0 or steps > 36:
+        raise HTTPException(status_code=400, detail="Steps must be between 0 and 36.")
 
     # Get the latest data for this province from df_forecast
-    prov_data = df_forecast[df_forecast['region_name'] == province].sort_values('date').copy()
+    prov_data = df_forecast[df_forecast['region_name'] == province].sort_values('date').tail(100).copy()
 
     if prov_data.empty:
         raise HTTPException(status_code=404, detail=f"No forecast data for: {province}")
 
-    # Use exact feature names from model
+    # Use exact feature names from the global model
     feature_cols = list(forecast_model.feature_names_in_)
-    prov_cols = [c for c in feature_cols if c.startswith('region_name_')]
-    lag_src_cols = ['Rainfall', 'Temperature', 'Soil Moisture (gapfilled historical time series)']
-
-    # Get the last row as starting point
-    last_row = prov_data.iloc[-1].copy()
-    last_date = last_row['date']
-    
-    # Initialize lag features into last_row for the very first step
-    for col in lag_src_cols:
-        last_row[f'{col}_lag_1'] = prov_data.iloc[-1][col] if len(prov_data) >= 1 else 0
-        last_row[f'{col}_lag_2'] = prov_data.iloc[-2][col] if len(prov_data) >= 2 else 0
-        last_row[f'{col}_lag_3'] = prov_data.iloc[-3][col] if len(prov_data) >= 3 else 0
 
     predictions = []
 
     for step in range(steps):
-        # Calculate next dekad date (~10 days)
+        last_date = pd.to_datetime(prov_data['date'].iloc[-1])
         next_date = last_date + pd.Timedelta(days=10)
 
-        # Build feature row
-        row_features = {}
-        row_features['year'] = next_date.year
-        row_features['month'] = next_date.month
-        row_features['day'] = next_date.day
-        row_features['dayofyear'] = next_date.timetuple().tm_yday
-        row_features['weekofyear'] = next_date.isocalendar()[1]
+        # Create new feature dict from the LAST row (to forward fill static/long-term features)
+        new_row = prov_data.iloc[-1].to_dict()
 
-        # Province one-hot encoding
-        for col in prov_cols:
-            row_features[col] = 1 if f"region_name_{province}" == col else 0
+        # Update time features
+        new_row['date'] = next_date
+        new_row['month'] = next_date.month
+        new_row['day'] = next_date.day
+        new_row['dekad_id'] = next_date.day // 10 + 1
+        new_row['year_extracted'] = next_date.year
+        new_row['month_extracted'] = next_date.month
+        new_row['quarter_extracted'] = (next_date.month - 1) // 3 + 1
+        new_row['semester_extracted'] = 1 if next_date.month <= 6 else 2
+        new_row['dayofyear'] = next_date.dayofyear
+        new_row['weekofyear'] = next_date.isocalendar()[1]
 
-        # Lag features - shift
-        for col in lag_src_cols:
-            for i in [1, 2, 3]:
-                lag_key = f'{col}_lag_{i}'
-                row_features[lag_key] = float(last_row[lag_key])
+        # Update short-term lags dynamically
+        lag_targets = ['Rainfall', 'Temperature', 'Soil Moisture (gapfilled historical time series)']
+        for t in lag_targets:
+            if len(prov_data) >= 1:
+                new_row[f'{t}_lag_1'] = prov_data[t].iloc[-1]
+            if len(prov_data) >= 2:
+                new_row[f'{t}_lag_2'] = prov_data[t].iloc[-2]
+            if len(prov_data) >= 3:
+                new_row[f'{t}_lag_3'] = prov_data[t].iloc[-3]
 
-        # Make sure all feature columns are present in exact order
-        X_pred = pd.DataFrame([row_features], columns=feature_cols).fillna(0)
+        # Prepare X_pred with exact columns
+        X_pred = pd.DataFrame([new_row]).reindex(columns=feature_cols, fill_value=0)
 
-        # Predict
-        pred = forecast_model.predict(X_pred)[0]
-        pred_dict = {TARGET_FORECAST_COLS[i]: round(float(pred[i]), 3) for i in range(len(TARGET_FORECAST_COLS))}
+        # Predict all targets at once
+        pred_dict = {}
+        pred_vals = forecast_model.predict(X_pred)[0]
+        for i, target in enumerate(TARGET_FORECAST_COLS):
+            pred_val = round(float(pred_vals[i]), 3)
+            pred_dict[target] = pred_val
+            new_row[target] = pred_val
 
         predictions.append({
             "date": next_date.strftime('%Y-%m-%d'),
@@ -399,24 +431,29 @@ def forecast_predict(province: str, steps: int = 3):
             "predicted": pred_dict,
         })
 
-        # Update last_row for next iteration (auto-regressive)
-        for i, col in enumerate(TARGET_FORECAST_COLS):
-            last_row[col] = pred[i]
-        # Update lag features
-        for col in lag_src_cols:
-            if f'{col}_lag_3' in last_row:
-                last_row[f'{col}_lag_3'] = last_row[f'{col}_lag_2']
-            if f'{col}_lag_2' in last_row:
-                last_row[f'{col}_lag_2'] = last_row[f'{col}_lag_1']
-            if f'{col}_lag_1' in last_row:
-                last_row[f'{col}_lag_1'] = pred[TARGET_FORECAST_COLS.index(col)]
+        # Append predicted row to history for autoregressive lags
+        prov_data = pd.concat([prov_data, pd.DataFrame([new_row])], ignore_index=True)
 
-        last_date = next_date
+    # Prepare historical test set performance (last 36 dekad)
+    historical_dates = []
+    historical_actual = {}
+    historical_pred = {}
+    hist_df = df_forecast[df_forecast['region_name'] == province].sort_values('date').tail(36).copy()
+    if not hist_df.empty:
+        historical_dates = [pd.to_datetime(d).strftime('%Y-%m-%d') for d in hist_df['date']]
+        X_hist = hist_df.reindex(columns=feature_cols, fill_value=0)
+        hist_preds = forecast_model.predict(X_hist)
+        for i, target in enumerate(TARGET_FORECAST_COLS):
+            historical_pred[target] = [round(float(p), 3) for p in hist_preds[:, i]]
+            historical_actual[target] = [round(float(a), 3) for a in hist_df[target]]
 
     return {
         "province": province,
         "steps": steps,
         "predictions": predictions,
+        "historical_dates": historical_dates,
+        "historical_actual": historical_actual,
+        "historical_pred": historical_pred,
     }
 
 

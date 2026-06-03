@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +16,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <!-- NAVBAR -->
@@ -39,13 +41,16 @@
                         <a class="nav-link" href="#" data-page="forecasting">Tren & Ramalan</a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
                             Informasi Proyek
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end border-0 shadow" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item nav-page-link" href="#" data-page="eda"><i class="fa-solid fa-chart-pie me-2 text-muted"></i>EDA & Analisis Data</a></li>
-                            <li><a class="dropdown-item nav-page-link" href="#" data-page="model"><i class="fa-solid fa-brain me-2 text-muted"></i>Eksperimen Model</a></li>
-                            <li><a class="dropdown-item nav-page-link" href="#" data-page="database"><i class="fa-solid fa-database me-2 text-muted"></i>Skema Database</a></li>
+                            <li><a class="dropdown-item nav-page-link" href="#" data-page="eda"><i
+                                        class="fa-solid fa-chart-pie me-2 text-muted"></i>EDA & Analisis Data</a></li>
+                            <li><a class="dropdown-item nav-page-link" href="#" data-page="model"><i
+                                        class="fa-solid fa-brain me-2 text-muted"></i>Eksperimen Model</a></li>
+
                         </ul>
                     </li>
                 </ul>
@@ -61,16 +66,75 @@
                     <div class="row align-items-center">
                         <div class="col-lg-6 hero-text pe-lg-5 mb-5 mb-lg-0">
                             <h1 class="display-4 fw-bold">Sistem Peringatan Dini Ketahanan Pangan</h1>
-                            <p class="lead mb-4 mt-3">Sistem Peringatan Dini untuk mendeteksi ancaman krisis iklim terhadap ketahanan pangan 270+ juta jiwa. Memantau sebelum krisis terjadi.</p>
+                            <p class="lead mb-4 mt-3">Sistem Peringatan Dini untuk mendeteksi ancaman krisis iklim
+                                terhadap ketahanan pangan 270+ juta jiwa. Memantau sebelum krisis terjadi.</p>
                             <div class="hero-buttons mt-4">
-                                <a href="#" class="btn btn-primary-custom me-3 mb-2 mb-md-0" data-page="map">Buka Peta Risiko</a>
-                                <a href="#" class="btn btn-outline-custom mb-2 mb-md-0" data-page="prediksi">Coba Simulasi</a>
+                                <a href="#" class="btn btn-primary-custom me-3 mb-2 mb-md-0" data-page="map">Buka Peta
+                                    Risiko</a>
+                                <a href="#" class="btn btn-outline-custom mb-2 mb-md-0" data-page="prediksi">Coba
+                                    Simulasi</a>
                             </div>
                         </div>
                         <div class="col-lg-6 text-center position-relative">
-                            <img src="https://images.unsplash.com/photo-1592982537447-6f296b010a3a?auto=format&fit=crop&w=800&q=80" alt="Agriculture" class="img-fluid rounded-4 shadow-lg hero-img">
+                            <img src="agriculture.jpg" alt="Agriculture" class="img-fluid rounded-4 shadow-lg hero-img">
                             <div class="position-absolute top-0 end-0 translate-middle-y me-n4 mt-5 d-none d-lg-block">
-                                <i class="fa-solid fa-leaf fa-4x text-warning opacity-75" style="transform: rotate(15deg);"></i>
+                                <i class="fa-solid fa-leaf fa-4x text-warning opacity-75"
+                                    style="transform: rotate(15deg);"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Pipeline Flow Section -->
+            <div class="flow-section py-5 bg-white border-top border-bottom">
+                <div class="container py-5">
+                    <div class="text-center mb-5 pb-3">
+                        <h2 class="section-title fw-bold">Alur Kerja Sistem (Data Pipeline)</h2>
+                        <p class="text-muted">Perjalanan data dari observasi iklim mentah hingga menjadi wawasan peringatan dini interaktif.</p>
+                    </div>
+                    
+                    <div class="row g-4 position-relative">
+                        <!-- Connecting Line (hidden on small screens) -->
+                        <div class="position-absolute top-50 start-0 w-100 translate-middle-y d-none d-lg-block" style="height: 4px; background-color: #e5e7eb; z-index: 1;"></div>
+                        
+                        <div class="col-lg-3 col-md-6 position-relative" style="z-index: 2;">
+                            <div class="card border-0 h-100 bg-transparent text-center">
+                                <div class="bg-primary-custom text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4 shadow" style="width: 80px; height: 80px; border: 6px solid white; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                                    <i class="fa-solid fa-database fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold">1. Pra-Pemrosesan Data</h5>
+                                <p class="text-muted small">Agregasi data satelit & iklim historis ke format dekad (10 harian) serta penanganan nilai kosong untuk siap dimodelkan.</p>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6 position-relative" style="z-index: 2;">
+                            <div class="card border-0 h-100 bg-transparent text-center">
+                                <div class="bg-primary-custom text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4 shadow" style="width: 80px; height: 80px; border: 6px solid white; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                                    <i class="fa-solid fa-object-group fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold">2. Clustering Wilayah</h5>
+                                <p class="text-muted small">Algoritma K-Means membagi 33 provinsi menjadi kluster tipe iklim (Basah, Normal, Kering) agar akurasi pemodelan spesifik.</p>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6 position-relative" style="z-index: 2;">
+                            <div class="card border-0 h-100 bg-transparent text-center">
+                                <div class="bg-primary-custom text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4 shadow" style="width: 80px; height: 80px; border: 6px solid white; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                                    <i class="fa-solid fa-brain fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold">3. Pemodelan AI (XGBoost)</h5>
+                                <p class="text-muted small">Model AI Classification mendeteksi sinyal EWS, sementara model Auto-Regressive Forecasting meramalkan iklim di masa mendatang.</p>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6 position-relative" style="z-index: 2;">
+                            <div class="card border-0 h-100 bg-transparent text-center">
+                                <div class="bg-primary-custom text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4 shadow" style="width: 80px; height: 80px; border: 6px solid white; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                                    <i class="fa-solid fa-desktop fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold">4. Visualisasi Dasbor</h5>
+                                <p class="text-muted small">Output model AI disajikan secara real-time pada dasbor web melalui peta interaktif, grafik, dan peringatan bahaya yang intuitif.</p>
                             </div>
                         </div>
                     </div>
@@ -83,30 +147,38 @@
                     <div class="row">
                         <div class="col-lg-5 mb-5 mb-lg-0 pe-lg-5">
                             <h2 class="section-title fw-bold mb-4">Mengapa Memilih AGRIVA?</h2>
-                            <p class="text-muted mb-4 lead" style="font-size: 1.1rem;">AGRIVA memanfaatkan teknologi Machine Learning (XGBoost) terdepan untuk memberikan analisis presisi tinggi terkait risiko iklim, membantu pengambil kebijakan mengambil langkah preventif dengan cepat.</p>
-                            <a href="#" class="btn btn-dark-custom rounded-pill px-4 py-3 mt-2" data-page="forecasting">Eksplorasi Forecasting <i class="fa-solid fa-arrow-right ms-2"></i></a>
+                            <p class="text-muted mb-4 lead" style="font-size: 1.1rem;">AGRIVA memanfaatkan teknologi
+                                Machine Learning (XGBoost) terdepan untuk memberikan analisis presisi tinggi terkait
+                                risiko iklim, membantu pengambil kebijakan mengambil langkah preventif dengan cepat.</p>
+                            <a href="#" class="btn btn-dark-custom rounded-pill px-4 py-3 mt-2"
+                                data-page="forecasting">Eksplorasi Forecasting <i
+                                    class="fa-solid fa-arrow-right ms-2"></i></a>
                         </div>
                         <div class="col-lg-7">
                             <div class="row g-5">
                                 <div class="col-sm-6">
                                     <div class="benefit-icon mb-3"><i class="fa-solid fa-map-location-dot"></i></div>
                                     <h5 class="fw-bold">Pemantauan Real-time</h5>
-                                    <p class="text-muted small mb-0">Visualisasi risiko iklim interaktif di 33 provinsi secara langsung pada peta.</p>
+                                    <p class="text-muted small mb-0">Visualisasi risiko iklim interaktif di 33 provinsi
+                                        secara langsung pada peta.</p>
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="benefit-icon mb-3"><i class="fa-solid fa-chart-line"></i></div>
                                     <h5 class="fw-bold">Forecasting Akurat</h5>
-                                    <p class="text-muted small mb-0">Peramalan kondisi iklim beberapa bulan ke depan menggunakan model time-series.</p>
+                                    <p class="text-muted small mb-0">Peramalan kondisi iklim beberapa bulan ke depan
+                                        menggunakan model time-series.</p>
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="benefit-icon mb-3"><i class="fa-solid fa-microchip"></i></div>
                                     <h5 class="fw-bold">Simulasi AI</h5>
-                                    <p class="text-muted small mb-0">Ubah parameter cuaca/iklim secara manual untuk melihat dampak pada status ketahanan pangan.</p>
+                                    <p class="text-muted small mb-0">Ubah parameter cuaca/iklim secara manual untuk
+                                        melihat dampak pada status ketahanan pangan.</p>
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="benefit-icon mb-3"><i class="fa-solid fa-database"></i></div>
                                     <h5 class="fw-bold">Berdasarkan Data Historis</h5>
-                                    <p class="text-muted small mb-0">Memanfaatkan 28K+ data historis dengan performa recall model di atas 85%.</p>
+                                    <p class="text-muted small mb-0">Memanfaatkan 28K+ data historis dengan performa
+                                        recall model di atas 85%.</p>
                                 </div>
                             </div>
                         </div>
@@ -119,13 +191,15 @@
                 <div class="container py-5">
                     <div class="text-center mb-5 pb-3">
                         <h2 class="section-title fw-bold">Tim Di Balik AGRIVA</h2>
-                        <p class="text-muted">Inovator yang berdedikasi membangun solusi teknologi untuk pertanian cerdas.</p>
+                        <p class="text-muted">Inovator yang berdedikasi membangun solusi teknologi untuk pertanian
+                            cerdas.</p>
                     </div>
                     <div class="row justify-content-center g-4">
                         <div class="col-md-4 col-lg-3">
                             <div class="card border-0 shadow-sm text-center team-card h-100 bg-light">
                                 <div class="card-body p-4">
-                                    <div class="team-avatar mb-3 mx-auto d-flex align-items-center justify-content-center text-white">
+                                    <div
+                                        class="team-avatar mb-3 mx-auto d-flex align-items-center justify-content-center text-white">
                                         <i class="fa-solid fa-user fa-3x"></i>
                                     </div>
                                     <h5 class="fw-bold mb-1">Developer 1</h5>
@@ -136,7 +210,8 @@
                         <div class="col-md-4 col-lg-3">
                             <div class="card border-0 shadow-sm text-center team-card h-100 bg-light">
                                 <div class="card-body p-4">
-                                    <div class="team-avatar mb-3 mx-auto d-flex align-items-center justify-content-center text-white">
+                                    <div
+                                        class="team-avatar mb-3 mx-auto d-flex align-items-center justify-content-center text-white">
                                         <i class="fa-solid fa-user fa-3x"></i>
                                     </div>
                                     <h5 class="fw-bold mb-1">Developer 2</h5>
@@ -147,7 +222,8 @@
                         <div class="col-md-4 col-lg-3">
                             <div class="card border-0 shadow-sm text-center team-card h-100 bg-light">
                                 <div class="card-body p-4">
-                                    <div class="team-avatar mb-3 mx-auto d-flex align-items-center justify-content-center text-white">
+                                    <div
+                                        class="team-avatar mb-3 mx-auto d-flex align-items-center justify-content-center text-white">
                                         <i class="fa-solid fa-user fa-3x"></i>
                                     </div>
                                     <h5 class="fw-bold mb-1">Developer 3</h5>
@@ -165,7 +241,8 @@
                     <div class="row border-bottom pb-4 mb-4">
                         <div class="col-lg-4 mb-4 mb-lg-0">
                             <h3 class="fw-bold text-dark mb-3">AGRIVA<span class="text-primary-custom">.</span></h3>
-                            <p class="text-muted mb-4 pe-4">Membangun ketahanan pangan masa depan melalui teknologi Early Warning System berbasis Artificial Intelligence dan Machine Learning.</p>
+                            <p class="text-muted mb-4 pe-4">Membangun ketahanan pangan masa depan melalui teknologi
+                                Early Warning System berbasis Artificial Intelligence dan Machine Learning.</p>
                             <div class="social-links">
                                 <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
                                 <a href="#"><i class="fa-brands fa-twitter"></i></a>
@@ -204,7 +281,8 @@
                     </div>
                     <div class="row align-items-center">
                         <div class="col-md-6 text-center text-md-start">
-                            <p class="text-muted small mb-0">Copyright ©2026. All Rights Reserved. — Designed with AGRIVA Team.</p>
+                            <p class="text-muted small mb-0">Copyright ©2026. All Rights Reserved. — Designed with
+                                AGRIVA Team.</p>
                         </div>
                     </div>
                 </div>
@@ -222,7 +300,8 @@
                 <!-- Status Cards -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
-                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 d-flex flex-row align-items-center justify-content-between border-start border-4 border-success">
+                        <div
+                            class="card border-0 shadow-sm rounded-3 p-3 h-100 d-flex flex-row align-items-center justify-content-between border-start border-4 border-success">
                             <div>
                                 <p class="text-muted small fw-bold mb-1 text-uppercase">Provinsi Aman</p>
                                 <h3 class="fw-bold text-success mb-0" id="statMapSafe">-</h3>
@@ -233,7 +312,8 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 d-flex flex-row align-items-center justify-content-between border-start border-4 border-danger">
+                        <div
+                            class="card border-0 shadow-sm rounded-3 p-3 h-100 d-flex flex-row align-items-center justify-content-between border-start border-4 border-danger">
                             <div>
                                 <p class="text-muted small fw-bold mb-1 text-uppercase">Provinsi Risiko</p>
                                 <h3 class="fw-bold text-danger mb-0" id="statMapRisk">-</h3>
@@ -244,7 +324,8 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 d-flex flex-row align-items-center justify-content-between border-start border-4 border-primary">
+                        <div
+                            class="card border-0 shadow-sm rounded-3 p-3 h-100 d-flex flex-row align-items-center justify-content-between border-start border-4 border-primary">
                             <div>
                                 <p class="text-muted small fw-bold mb-1 text-uppercase">Suhu Nasional</p>
                                 <h3 class="fw-bold text-primary mb-0" id="statMapTemp">-</h3>
@@ -256,14 +337,71 @@
                     </div>
                 </div>
 
+                <!-- Penjelasan AI & Clustering -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                    <div class="row g-4">
+                        <div class="col-md-7">
+                            <h6 class="fw-bold text-primary-custom mb-3"><i class="fa-solid fa-layer-group me-2"></i>
+                                Proses Clustering & Karakteristik Wilayah</h6>
+                            <p class="small text-muted mb-3">Sebelum klasifikasi, sistem membagi 33 Provinsi menjadi
+                                <strong>3 Kluster Agroklimatologi</strong> menggunakan K-Means berdasarkan variabel
+                                <em>Curah Hujan, Suhu, & Kelembaban Tanah</em>. Hal ini meningkatkan akurasi deteksi
+                                karena tiap kluster dilatih menggunakan model berbeda.
+                            </p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-info bg-opacity-10 text-dark border border-info p-2"
+                                    title="Provinsi: Aceh, Sumbar, Jambi, Sumsel, Kalbar, dll"><i
+                                        class="fa-solid fa-cloud-showers-heavy text-info me-1"></i> <strong>Kluster 0:
+                                        Daerah Basah</strong> (Curah hujan & kelembaban tinggi)</span>
+                                <span class="badge bg-success bg-opacity-10 text-dark border border-success p-2"
+                                    title="Provinsi: Riau, Sumut, Bengkulu, Banten, Jabar, dll"><i
+                                        class="fa-solid fa-cloud-sun text-success me-1"></i> <strong>Kluster 1: Daerah
+                                        Normal</strong> (Iklim tropis stabil)</span>
+                                <span class="badge bg-warning bg-opacity-10 text-dark border border-warning p-2"
+                                    title="Provinsi: Jateng, Jatim, Bali, NTB, NTT, dll"><i
+                                        class="fa-solid fa-sun text-warning me-1"></i> <strong>Kluster 2: Daerah
+                                        Kering</strong> (Suhu tinggi, curah hujan rendah)</span>
+                            </div>
+                        </div>
+                        <div class="col-md-5" style="border-left: 1px dashed #dee2e6;">
+                            <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                Keterangan Status Peta</h6>
+                            <div class="d-flex mb-3 align-items-start">
+                                <div class="bg-danger bg-opacity-10 text-danger rounded p-2 me-3"><i
+                                        class="fa-solid fa-xmark"></i></div>
+                                <div>
+                                    <span class="fw-bold small text-dark d-block">Merah (Berisiko Tinggi)</span>
+                                    <span class="small text-muted" style="line-height: 1.2;">Potensi defisit air,
+                                        kekeringan ekstrem, hama spesifik cuaca, atau gagal panen massal. Peringatan
+                                        Dini Aktif.</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start">
+                                <div class="bg-success bg-opacity-10 text-success rounded p-2 me-3"><i
+                                        class="fa-solid fa-check"></i></div>
+                                <div>
+                                    <span class="fw-bold small text-dark d-block">Hijau (Aman)</span>
+                                    <span class="small text-muted" style="line-height: 1.2;">Kondisi pengairan stabil,
+                                        cuaca mendukung, indeks vegetasi (FPAR) normal untuk masa tanam.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="row g-4">
                     <div class="col-lg-9">
                         <div class="card border-0 shadow-sm rounded-4 overflow-hidden position-relative h-100">
-                            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                                <h6 class="fw-bold mb-0"><i class="fa-solid fa-location-dot me-2 text-muted"></i> PETA SEBARAN NASIONAL</h6>
+                            <div
+                                class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="fw-bold mb-0"><i class="fa-solid fa-location-dot me-2 text-muted"></i> PETA
+                                    SEBARAN NASIONAL</h6>
                                 <div class="d-flex align-items-center gap-3">
-                                    <div class="d-flex align-items-center gap-2"><span class="legend-dot safe shadow-sm"></span><span class="small fw-semibold text-dark">Aman</span></div>
-                                    <div class="d-flex align-items-center gap-2"><span class="legend-dot danger shadow-sm"></span><span class="small fw-semibold text-dark">Berisiko</span></div>
+                                    <div class="d-flex align-items-center gap-2"><span
+                                            class="legend-dot safe shadow-sm"></span><span
+                                            class="small fw-semibold text-dark">Aman</span></div>
+                                    <div class="d-flex align-items-center gap-2"><span
+                                            class="legend-dot danger shadow-sm"></span><span
+                                            class="small fw-semibold text-dark">Berisiko</span></div>
                                 </div>
                             </div>
                             <div id="map" style="height: 65vh; min-height: 500px; width: 100%;"></div>
@@ -271,8 +409,9 @@
                     </div>
                     <div class="col-lg-3">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h6 class="fw-bold mb-4 border-bottom pb-2"><i class="fa-solid fa-sliders me-2 text-muted"></i> KONTROL PETA</h6>
-                            
+                            <h6 class="fw-bold mb-4 border-bottom pb-2"><i
+                                    class="fa-solid fa-sliders me-2 text-muted"></i> KONTROL PETA</h6>
+
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted text-uppercase">Bulan</label>
                                 <select id="filterMonth" class="form-select bg-light">
@@ -311,11 +450,16 @@
                                     <option value="risiko">Hanya Berisiko (1)</option>
                                 </select>
                             </div>
-                            
-                            <button class="btn btn-dark-custom w-100 py-2 fw-bold" id="btnApplyFilter">Terapkan Filter</button>
-                            
+
+                            <button class="btn btn-dark-custom w-100 py-2 fw-bold" id="btnApplyFilter">Terapkan
+                                Filter</button>
+
                             <div class="mt-4 p-3 bg-light rounded-3 border">
-                                <p class="small text-muted mb-0"><i class="fa-solid fa-circle-info me-2 text-primary-custom"></i>Peta menggunakan <strong>Choropleth</strong> untuk menunjukkan wilayah administrasi. Wilayah yang difilter keluar akan berwarna abu-abu.</p>
+                                <p class="small text-muted mb-0"><i
+                                        class="fa-solid fa-circle-info me-2 text-primary-custom"></i>Peta menggunakan
+                                    <strong>Choropleth</strong> untuk menunjukkan wilayah administrasi. Wilayah yang
+                                    difilter keluar akan berwarna abu-abu.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -326,30 +470,43 @@
         <!-- ================= PREDIKSI PAGE ================= -->
         <section class="page" id="page-prediksi" style="background-color: #f8f9fa; min-height: calc(100vh - 86px);">
             <div class="container-fluid px-4 py-5">
-                <div class="mb-4 text-center">
-                    <h2 class="fw-bold text-dark mb-2">Simulator Skenario Bahaya</h2>
-                    <p class="text-muted mb-0">Ubah parameter pertanian (suhu, curah hujan, vegetasi) secara interaktif untuk memprediksi ancaman ketahanan pangan.</p>
+                <div class="mb-4">
+                    <h2 class="fw-bold text-dark mb-1">Simulator Skenario Bahaya</h2>
+                    <p class="text-muted mb-0">Ubah parameter pertanian (suhu, curah hujan, vegetasi) secara interaktif
+                        untuk memprediksi ancaman ketahanan pangan.</p>
                 </div>
 
                 <div class="row g-4 justify-content-center">
                     <div class="col-lg-7">
                         <div class="card border-0 shadow-sm rounded-4 p-4">
-                            <h6 class="fw-bold mb-4 border-bottom pb-3"><i class="fa-solid fa-sliders me-2 text-muted"></i> PARAMETER INPUT</h6>
+                            <h6 class="fw-bold mb-4 border-bottom pb-3"><i
+                                    class="fa-solid fa-sliders me-2 text-muted"></i> PARAMETER INPUT</h6>
                             <form id="ewsForm">
                                 <div class="row g-4 mb-4">
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold text-muted text-uppercase">Provinsi</label>
-                                        <select id="predictProvince" name="province" class="form-select border-bottom-only bg-light" required>
+                                        <label
+                                            class="form-label small fw-bold text-muted text-uppercase">Provinsi</label>
+                                        <select id="predictProvince" name="province"
+                                            class="form-select border-bottom-only bg-light" required>
                                             <option value="">-- Pilih Provinsi --</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label small fw-bold text-muted text-uppercase">Bulan</label>
-                                        <select id="monthExt" name="month_extracted" class="form-select border-bottom-only bg-light" required>
-                                            <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
-                                            <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
-                                            <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
-                                            <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+                                        <select id="monthExt" name="month_extracted"
+                                            class="form-select border-bottom-only bg-light" required>
+                                            <option value="1">Januari</option>
+                                            <option value="2">Februari</option>
+                                            <option value="3">Maret</option>
+                                            <option value="4">April</option>
+                                            <option value="5">Mei</option>
+                                            <option value="6">Juni</option>
+                                            <option value="7">Juli</option>
+                                            <option value="8">Agustus</option>
+                                            <option value="9">September</option>
+                                            <option value="10">Oktober</option>
+                                            <option value="11">November</option>
+                                            <option value="12">Desember</option>
                                         </select>
                                     </div>
                                 </div>
@@ -357,89 +514,121 @@
                                 <div class="row g-4 mb-5">
                                     <!-- Parameters with icons -->
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
-                                            <span><i class="fa-solid fa-cloud-rain me-2 text-primary"></i>Curah Hujan</span>
+                                        <label
+                                            class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
+                                            <span><i class="fa-solid fa-cloud-rain me-2 text-primary"></i>Curah
+                                                Hujan</span>
                                             <span class="badge bg-light text-dark border">mm</span>
                                         </label>
                                         <div class="d-flex align-items-center gap-3">
-                                            <input type="range" id="rainfall" name="Rainfall" min="0" max="600" step="1" value="150" class="form-range flex-grow-1" required>
-                                            <span id="rainfallVal" class="fw-bold text-dark" style="width: 50px; text-align: right;">150</span>
+                                            <input type="range" id="rainfall" name="Rainfall" min="0" max="600" step="1"
+                                                value="150" class="form-range flex-grow-1" required>
+                                            <span id="rainfallVal" class="fw-bold text-dark"
+                                                style="width: 50px; text-align: right;">150</span>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
+                                        <label
+                                            class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
                                             <span><i class="fa-solid fa-droplet me-2 text-info"></i>SPI 3 Bulan</span>
                                             <span class="badge bg-light text-dark border">Index</span>
                                         </label>
                                         <div class="d-flex align-items-center gap-3">
-                                            <input type="range" id="spi3" name="SPI_3_months" min="-3" max="3" step="0.1" value="0" class="form-range flex-grow-1" required>
-                                            <span id="spi3Val" class="fw-bold text-dark" style="width: 50px; text-align: right;">0</span>
+                                            <input type="range" id="spi3" name="SPI_3_months" min="-3" max="3"
+                                                step="0.1" value="0" class="form-range flex-grow-1" required>
+                                            <span id="spi3Val" class="fw-bold text-dark"
+                                                style="width: 50px; text-align: right;">0</span>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
-                                            <span><i class="fa-solid fa-temperature-half me-2 text-danger"></i>Suhu Rata-rata</span>
+                                        <label
+                                            class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
+                                            <span><i class="fa-solid fa-temperature-half me-2 text-danger"></i>Suhu
+                                                Rata-rata</span>
                                             <span class="badge bg-light text-dark border">°C</span>
                                         </label>
                                         <div class="d-flex align-items-center gap-3">
-                                            <input type="range" id="temperature" name="Temperature" min="20" max="40" step="0.1" value="28.5" class="form-range flex-grow-1" required>
-                                            <span id="temperatureVal" class="fw-bold text-dark" style="width: 50px; text-align: right;">28.5</span>
+                                            <input type="range" id="temperature" name="Temperature" min="20" max="40"
+                                                step="0.1" value="28.5" class="form-range flex-grow-1" required>
+                                            <span id="temperatureVal" class="fw-bold text-dark"
+                                                style="width: 50px; text-align: right;">28.5</span>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
+                                        <label
+                                            class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
                                             <span><i class="fa-solid fa-water me-2 text-primary"></i>WSI</span>
                                             <span class="badge bg-light text-dark border">%</span>
                                         </label>
                                         <div class="d-flex align-items-center gap-3">
-                                            <input type="range" id="wsi" name="WSI" min="0" max="100" step="1" value="85" class="form-range flex-grow-1" required>
-                                            <span id="wsiVal" class="fw-bold text-dark" style="width: 50px; text-align: right;">85</span>
+                                            <input type="range" id="wsi" name="WSI" min="0" max="100" step="1"
+                                                value="85" class="form-range flex-grow-1" required>
+                                            <span id="wsiVal" class="fw-bold text-dark"
+                                                style="width: 50px; text-align: right;">85</span>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
-                                            <span><i class="fa-solid fa-sun me-2 text-warning"></i>Radiasi Matahari</span>
+                                        <label
+                                            class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
+                                            <span><i class="fa-solid fa-sun me-2 text-warning"></i>Radiasi
+                                                Matahari</span>
                                             <span class="badge bg-light text-dark border">J/m²</span>
                                         </label>
                                         <div class="d-flex align-items-center gap-3">
-                                            <input type="range" id="solarRad" name="Solar_Radiation" min="100000" max="300000" step="1000" value="180000" class="form-range flex-grow-1" required>
-                                            <span id="solarRadVal" class="fw-bold text-dark" style="width: 60px; text-align: right;">180000</span>
+                                            <input type="range" id="solarRad" name="Solar_Radiation" min="100000"
+                                                max="300000" step="1000" value="180000" class="form-range flex-grow-1"
+                                                required>
+                                            <span id="solarRadVal" class="fw-bold text-dark"
+                                                style="width: 60px; text-align: right;">180000</span>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
-                                            <span><i class="fa-solid fa-mound me-2 text-secondary"></i>Kelembaban Tanah</span>
+                                        <label
+                                            class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
+                                            <span><i class="fa-solid fa-mound me-2 text-secondary"></i>Kelembaban
+                                                Tanah</span>
                                             <span class="badge bg-light text-dark border">m³/m³</span>
                                         </label>
                                         <div class="d-flex align-items-center gap-3">
-                                            <input type="range" id="soilMoisture" name="Soil_Moisture" min="0.1" max="0.6" step="0.01" value="0.35" class="form-range flex-grow-1" required>
-                                            <span id="soilMoistureVal" class="fw-bold text-dark" style="width: 50px; text-align: right;">0.35</span>
+                                            <input type="range" id="soilMoisture" name="Soil_Moisture" min="0.1"
+                                                max="0.6" step="0.01" value="0.35" class="form-range flex-grow-1"
+                                                required>
+                                            <span id="soilMoistureVal" class="fw-bold text-dark"
+                                                style="width: 50px; text-align: right;">0.35</span>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
+                                        <label
+                                            class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
                                             <span><i class="fa-solid fa-leaf me-2 text-success"></i>FPAR Vegetasi</span>
                                             <span class="badge bg-light text-dark border">%</span>
                                         </label>
                                         <div class="d-flex align-items-center gap-3">
-                                            <input type="range" id="fpar" name="FPAR" min="0" max="100" step="1" value="68" class="form-range flex-grow-1" required>
-                                            <span id="fparVal" class="fw-bold text-dark" style="width: 50px; text-align: right;">68</span>
+                                            <input type="range" id="fpar" name="FPAR" min="0" max="100" step="1"
+                                                value="68" class="form-range flex-grow-1" required>
+                                            <span id="fparVal" class="fw-bold text-dark"
+                                                style="width: 50px; text-align: right;">68</span>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
-                                            <span><i class="fa-solid fa-chart-line me-2 text-success"></i>FPAR Z-Score</span>
+                                        <label
+                                            class="form-label small fw-bold text-muted d-flex justify-content-between align-items-center">
+                                            <span><i class="fa-solid fa-chart-line me-2 text-success"></i>FPAR
+                                                Z-Score</span>
                                             <span class="badge bg-light text-dark border">Z</span>
                                         </label>
                                         <div class="d-flex align-items-center gap-3">
-                                            <input type="range" id="fparZ" name="FPAR_zscore" min="-3" max="3" step="0.1" value="-0.2" class="form-range flex-grow-1" required>
-                                            <span id="fparZVal" class="fw-bold text-dark" style="width: 50px; text-align: right;">-0.2</span>
+                                            <input type="range" id="fparZ" name="FPAR_zscore" min="-3" max="3"
+                                                step="0.1" value="-0.2" class="form-range flex-grow-1" required>
+                                            <span id="fparZVal" class="fw-bold text-dark"
+                                                style="width: 50px; text-align: right;">-0.2</span>
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <button type="submit" class="btn w-100 py-3 fw-bold text-dark" id="btnPredict" style="background-color: #a7f3d0; border: 2px solid #059669; font-size: 1.1rem; border-radius: 12px; transition: all 0.3s;">
-                                    <i class="fa-solid fa-wand-magic-sparkles me-2"></i>JALANKAN SIMULASI DETEKSI >
+
+                                <button type="submit" class="btn w-100 py-3 fw-bold text-dark" id="btnPredict"
+                                    style="background-color: #a7f3d0; border: 2px solid #059669; font-size: 1.1rem; border-radius: 12px; transition: all 0.3s;">
+                                    JALANKAN SIMULASI DETEKSI
                                 </button>
                             </form>
 
@@ -449,17 +638,24 @@
                                 <div class="accordion" id="indicatorAccordion">
                                     <div class="accordion-item border-0 bg-light mb-2 rounded-3">
                                         <h2 class="accordion-header">
-                                            <button class="accordion-button collapsed bg-transparent fw-semibold py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInfo">
+                                            <button class="accordion-button collapsed bg-transparent fw-semibold py-2"
+                                                type="button" data-bs-toggle="collapse" data-bs-target="#collapseInfo">
                                                 Penjelasan Parameter & Satuannya
                                             </button>
                                         </h2>
-                                        <div id="collapseInfo" class="accordion-collapse collapse" data-bs-parent="#indicatorAccordion">
+                                        <div id="collapseInfo" class="accordion-collapse collapse"
+                                            data-bs-parent="#indicatorAccordion">
                                             <div class="accordion-body small text-muted">
                                                 <ul class="mb-0 ps-3">
-                                                    <li><strong>SPI 3 Bulan:</strong> Standardized Precipitation Index. Nilai negatif menunjukkan kekeringan.</li>
-                                                    <li><strong>WSI:</strong> Water Satisfaction Index. Semakin tinggi persentase, semakin baik kebutuhan air tanaman terpenuhi.</li>
-                                                    <li><strong>FPAR:</strong> Fraction of Photosynthetically Active Radiation. Mengukur aktivitas fotosintesis (kesehatan vegetasi).</li>
-                                                    <li><strong>Radiasi Matahari:</strong> Energi matahari yang mencapai permukaan bumi, mempengaruhi evaporasi.</li>
+                                                    <li><strong>SPI 3 Bulan:</strong> Standardized Precipitation Index.
+                                                        Nilai negatif menunjukkan kekeringan.</li>
+                                                    <li><strong>WSI:</strong> Water Satisfaction Index. Semakin tinggi
+                                                        persentase, semakin baik kebutuhan air tanaman terpenuhi.</li>
+                                                    <li><strong>FPAR:</strong> Fraction of Photosynthetically Active
+                                                        Radiation. Mengukur aktivitas fotosintesis (kesehatan vegetasi).
+                                                    </li>
+                                                    <li><strong>Radiasi Matahari:</strong> Energi matahari yang mencapai
+                                                        permukaan bumi, mempengaruhi evaporasi.</li>
                                                 </ul>
                                             </div>
                                         </div>
@@ -469,22 +665,29 @@
                         </div>
                     </div>
                     <div class="col-lg-5">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-column" id="predictResultCard">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-column"
+                            id="predictResultCard">
                             <div id="resultPlaceholder" class="text-center my-auto py-5 text-muted">
-                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                    style="width: 80px; height: 80px;">
                                     <i class="fa-solid fa-gauge-high fa-2x text-secondary"></i>
                                 </div>
                                 <h5 class="fw-bold text-dark">Siap Memulai Simulasi</h5>
-                                <p class="mb-0 small">Hasil simulasi probabilitas bahaya krisis pangan akan ditampilkan dalam grafik *gauge* di sini.</p>
+                                <p class="mb-0 small">Hasil simulasi probabilitas bahaya krisis pangan akan ditampilkan
+                                    dalam grafik *gauge* di sini.</p>
                             </div>
                             <div id="resultContent" class="d-none text-center">
-                                <h6 class="fw-bold mb-3 text-muted text-uppercase letter-spacing-1">STATUS KERAWANAN PANGAN</h6>
-                                <div id="resultBadge" class="d-inline-block px-5 py-2 rounded-3 fs-3 fw-bold text-white shadow-sm mb-4 border border-2">-</div>
-                                
+                                <h6 class="fw-bold mb-3 text-muted text-uppercase letter-spacing-1">STATUS KERAWANAN
+                                    PANGAN</h6>
+                                <div id="resultBadge"
+                                    class="d-inline-block px-5 py-2 rounded-3 fs-3 fw-bold text-white shadow-sm mb-4 border border-2">
+                                    -</div>
+
                                 <!-- Gauge Chart for Probability -->
                                 <div class="position-relative mx-auto" style="width: 250px; height: 150px;">
                                     <canvas id="gaugeChart"></canvas>
-                                    <div class="position-absolute bottom-0 start-50 translate-middle-x text-center w-100" style="margin-bottom: -10px;">
+                                    <div class="position-absolute bottom-0 start-50 translate-middle-x text-center w-100"
+                                        style="margin-bottom: -10px;">
                                         <h3 class="fw-bold mb-0" id="gaugeValue">0%</h3>
                                         <p class="small text-muted fw-bold mb-0">PELUANG BAHAYA</p>
                                     </div>
@@ -499,9 +702,12 @@
                                         <span class="text-muted small fw-semibold text-uppercase">KARAKTERISTIK</span>
                                         <span class="fw-bold text-dark" id="resCluster">-</span>
                                     </div>
-                                    
+
                                     <p class="small text-muted mb-0 lh-lg" id="resDescription">
-                                        <i class="fa-solid fa-circle-check text-success me-1"></i> Indikator berada dalam zona stabil. Peluang bahaya (<span id="resProbText"></span>) berada di bawah ambang batas (Threshold klasifikasi model). Kondisi pengairan dan cuaca diprediksi masih mendukung.
+                                        <i class="fa-solid fa-circle-check text-success me-1"></i> Indikator berada
+                                        dalam zona stabil. Peluang bahaya (<span id="resProbText"></span>) berada di
+                                        bawah ambang batas (Threshold klasifikasi model). Kondisi pengairan dan cuaca
+                                        diprediksi masih mendukung.
                                     </p>
                                 </div>
                             </div>
@@ -517,7 +723,8 @@
             <div class="container-fluid px-4 py-5">
                 <div class="mb-4">
                     <h2 class="fw-bold text-dark">Tren Historis & Peramalan AI</h2>
-                    <p class="text-muted mb-0">Visualisasi historis dan peramalan XGBoost Auto-Regressive (Per-Bulan) untuk kondisi iklim di masa mendatang.</p>
+                    <p class="text-muted mb-0">Visualisasi historis dan peramalan XGBoost Auto-Regressive (Per-Dekad)
+                        untuk kondisi iklim di masa mendatang.</p>
                 </div>
 
                 <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
@@ -534,17 +741,19 @@
                                 <option value="Temperature">Suhu (Temperature)</option>
                                 <option value="Water Satisfaction Index (WSI)">WSI</option>
                                 <option value="Solar Radiation">Radiasi Surya</option>
-                                <option value="Soil Moisture (gapfilled historical time series)">Kelembapan Tanah</option>
+                                <option value="Soil Moisture (gapfilled historical time series)">Kelembapan Tanah
+                                </option>
                                 <option value="FPAR">FPAR</option>
                                 <option value="FPAR - zscore">FPAR Z-Score</option>
                             </select>
                         </div>
                         <div class="col-lg-4 col-md-8">
                             <label class="form-label small fw-bold text-muted d-flex justify-content-between">
-                                <span>Horizon Ramalan (Bulan Kedepan)</span>
-                                <span class="text-primary-custom fw-bold" id="stepsValue">3 Bulan</span>
+                                <span>Horizon Ramalan (Dekad Kedepan)</span>
+                                <span class="text-primary-custom fw-bold" id="stepsValue">0 Dekad</span>
                             </label>
-                            <input type="range" id="forecastSteps" min="1" max="12" value="3" class="form-range custom-range">
+                            <input type="range" id="forecastSteps" min="0" max="12" value="0"
+                                class="form-range custom-range">
                         </div>
                         <div class="col-lg-2 col-md-4">
                             <button class="btn btn-dark-custom w-100 fw-bold py-2 shadow-sm rounded-3" id="btnForecast">
@@ -557,19 +766,25 @@
                 <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
                     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="benefit-icon" style="width: 40px; height: 40px; line-height: 40px; font-size: 16px;"><i class="fa-solid fa-chart-area"></i></div>
+                            <div class="benefit-icon"
+                                style="width: 40px; height: 40px; line-height: 40px; font-size: 16px;"><i
+                                    class="fa-solid fa-chart-area"></i></div>
                             <h5 class="fw-bold mb-0">Proyeksi AI</h5>
                         </div>
-                        <span class="badge bg-light text-dark border px-4 py-2 rounded-pill shadow-sm" id="forecastChartBadge">Rainfall</span>
+                        <span class="badge bg-light text-dark border px-4 py-2 rounded-pill shadow-sm"
+                            id="forecastChartBadge">Rainfall</span>
                     </div>
                     <div style="height: 500px; width: 100%; position: relative;">
                         <canvas id="chartForecast"></canvas>
                     </div>
                 </div>
 
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white" id="forecastTableCard" style="display:none;">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white" id="forecastTableCard"
+                    style="display:none;">
                     <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
-                        <div class="benefit-icon" style="width: 40px; height: 40px; line-height: 40px; font-size: 16px;"><i class="fa-solid fa-table"></i></div>
+                        <div class="benefit-icon"
+                            style="width: 40px; height: 40px; line-height: 40px; font-size: 16px;"><i
+                                class="fa-solid fa-table"></i></div>
                         <h5 class="fw-bold mb-0">Detail Hasil Ramalan</h5>
                     </div>
                     <div class="table-responsive">
@@ -602,7 +817,8 @@
                 <div class="container-fluid px-4">
                     <div class="row align-items-end g-3">
                         <div class="col-md-3">
-                            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Wilayah / Provinsi</label>
+                            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Wilayah /
+                                Provinsi</label>
                             <select id="edaFilterProvince" class="form-select bg-light border-0">
                                 <option value="All">Seluruh Indonesia</option>
                             </select>
@@ -614,7 +830,8 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <button id="btnEdaApply" class="btn btn-dark-custom w-100 fw-bold"><i class="fa-solid fa-filter me-2"></i>Terapkan Filter</button>
+                            <button id="btnEdaApply" class="btn btn-dark-custom w-100 fw-bold"><i
+                                    class="fa-solid fa-filter me-2"></i>Terapkan Filter</button>
                         </div>
                     </div>
                 </div>
@@ -623,45 +840,62 @@
             <div class="container-fluid px-4 pb-5">
                 <div class="mb-4">
                     <h2 class="fw-bold text-dark">EDA & Analisis Data Historis</h2>
-                    <p class="text-muted mb-0">Eksplorasi dataset EWS secara komprehensif (Sebaran, Korelasi, dan Klaster).</p>
+                    <p class="text-muted mb-0">Eksplorasi dataset EWS secara komprehensif (Sebaran, Korelasi, dan
+                        Klaster).</p>
                 </div>
-                
+
                 <!-- 2. Baris Pertama: KPI Scorecards -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+                        <div
+                            class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
                             <div>
                                 <p class="text-muted small fw-bold mb-1 text-uppercase">Rata-rata Curah Hujan</p>
-                                <h3 class="fw-bold text-info mb-0" id="edaKpiRain">-</h3>
+                                <h3 class="fw-bold mb-0" id="edaKpiRain" style="color: #3b5d50;">-</h3>
                             </div>
-                            <div class="bg-info bg-opacity-10 rounded-circle p-3 text-info" style="width:60px; height:60px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-cloud-rain fa-lg"></i></div>
+                            <div class="rounded-circle p-3"
+                                style="background-color: rgba(59, 93, 80, 0.1); color: #3b5d50; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">
+                                <i class="fa-solid fa-cloud-rain fa-lg"></i>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+                        <div
+                            class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
                             <div>
                                 <p class="text-muted small fw-bold mb-1 text-uppercase">Suhu Rata-rata</p>
-                                <h3 class="fw-bold text-warning mb-0" id="edaKpiTemp">-</h3>
+                                <h3 class="fw-bold mb-0" id="edaKpiTemp" style="color: #f9bf29;">-</h3>
                             </div>
-                            <div class="bg-warning bg-opacity-10 rounded-circle p-3 text-warning" style="width:60px; height:60px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-temperature-half fa-lg"></i></div>
+                            <div class="rounded-circle p-3"
+                                style="background-color: rgba(249, 191, 41, 0.1); color: #f9bf29; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">
+                                <i class="fa-solid fa-temperature-half fa-lg"></i>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+                        <div
+                            class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
                             <div>
                                 <p class="text-muted small fw-bold mb-1 text-uppercase">Status Dominan</p>
-                                <h3 class="fw-bold text-success mb-0" id="edaKpiStatus">-</h3>
+                                <h3 class="fw-bold mb-0" id="edaKpiStatus" style="color: #3b5d50;">-</h3>
                             </div>
-                            <div class="bg-success bg-opacity-10 rounded-circle p-3 text-success" style="width:60px; height:60px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-chart-pie fa-lg"></i></div>
+                            <div class="rounded-circle p-3"
+                                style="background-color: rgba(59, 93, 80, 0.1); color: #3b5d50; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">
+                                <i class="fa-solid fa-chart-pie fa-lg"></i>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
+                        <div
+                            class="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex flex-row align-items-center justify-content-between">
                             <div>
                                 <p class="text-muted small fw-bold mb-1 text-uppercase">Suhu Max Ekstrem</p>
-                                <h3 class="fw-bold text-danger mb-0" id="edaKpiAnomaly">-</h3>
+                                <h3 class="fw-bold mb-0" id="edaKpiAnomaly" style="color: #f9bf29;">-</h3>
                             </div>
-                            <div class="bg-danger bg-opacity-10 rounded-circle p-3 text-danger" style="width:60px; height:60px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-fire fa-lg"></i></div>
+                            <div class="rounded-circle p-3"
+                                style="background-color: rgba(249, 191, 41, 0.1); color: #f9bf29; width:60px; height:60px; display:flex; align-items:center; justify-content:center;">
+                                <i class="fa-solid fa-fire fa-lg"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -678,7 +912,19 @@
                     </div>
                     <div class="col-md-7">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h5 class="fw-bold mb-4 border-bottom pb-2">Distribusi Soil Moisture (Histogram)</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+                                <h5 class="fw-bold mb-0">Distribusi Fitur (Histogram)</h5>
+                                <select id="edaDistFeature" class="form-select form-select-sm w-auto bg-light border-0">
+                                    <option value="Rainfall">Curah Hujan</option>
+                                    <option value="Temperature">Suhu Udara</option>
+                                    <option value="SPI - 3 months">Indeks Kekeringan</option>
+                                    <option value="Water Satisfaction Index (WSI)">Kecukupan Air</option>
+                                    <option value="Solar Radiation">Radiasi Matahari</option>
+                                    <option value="Soil Moisture (gapfilled historical time series)" selected>Kelembaban
+                                        Tanah</option>
+                                    <option value="FPAR">Pertumbuhan Vegetasi</option>
+                                </select>
+                            </div>
                             <div style="height: 300px; position: relative;">
                                 <canvas id="edaChartHist"></canvas>
                             </div>
@@ -697,7 +943,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="row g-4 mb-4">
                     <div class="col-md-5">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
@@ -709,25 +955,35 @@
                     </div>
                     <div class="col-md-7">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h5 class="fw-bold mb-4 border-bottom pb-2">Heatmap Korelasi Fitur & Target</h5>
-                            <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
-                                <table class="table table-borderless table-sm text-center align-middle" id="edaCorrTable" style="font-size: 0.8rem; border-collapse: separate; border-spacing: 2px;">
-                                    <thead class="sticky-top bg-white">
-                                        <tr id="edaCorrHead"></tr>
-                                    </thead>
-                                    <tbody id="edaCorrBody"></tbody>
-                                </table>
+                            <h5 class="fw-bold mb-4 border-bottom pb-2">Hubungan Curah Hujan & Kelembaban Tanah</h5>
+                            <div style="height: 350px; position: relative;">
+                                <canvas id="edaChartScatter"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- 5. Baris Keempat: Visualisasi Spasial -->
+
+                <!-- 5. Baris Keempat: Data Summary -->
                 <div class="row g-4">
                     <div class="col-md-12">
                         <div class="card border-0 shadow-sm rounded-4 p-4">
-                            <h5 class="fw-bold mb-4 border-bottom pb-2">Peta Sebaran K-Means Cluster Wilayah</h5>
-                            <div id="edaMap" style="height: 500px; width: 100%; border-radius: 12px; z-index: 1;" class="border"></div>
+                            <h5 class="fw-bold mb-4 border-bottom pb-2">Ringkasan Data Agregat</h5>
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover align-middle table-sm" style="font-size: 0.9rem;">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th class="fw-bold">Kategori</th>
+                                            <th>Curah Hujan</th>
+                                            <th>Suhu</th>
+                                            <th>SPI-3</th>
+                                            <th>WSI</th>
+                                            <th>Soil Moist</th>
+                                            <th>Total Berisiko</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="edaDataTable"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -738,105 +994,98 @@
         <section class="page" id="page-model" style="background-color: #f8f9fa; min-height: calc(100vh - 86px);">
             <div class="container-fluid px-4 py-5">
                 <div class="mb-4">
-                    <h2 class="fw-bold text-dark">Eksperimen Fitur & Kualitas Model</h2>
-                    <p class="text-muted mb-0">Informasi evaluasi model Machine Learning untuk tim/dosen penilai.</p>
+                    <h2 class="fw-bold text-dark">Kinerja & Evaluasi Model Machine Learning</h2>
+                    <p class="text-muted mb-0">Analisis metrik evaluasi untuk model Clustering (K-Means), Classification
+                        (XGBoost), dan Forecasting (XGBRegressor).</p>
                 </div>
 
-                <div class="row g-4">
-                    <div class="col-lg-8">
-                        <div class="card border-0 shadow-sm rounded-4 p-4">
-                            <h5 class="fw-bold mb-4 border-bottom pb-2">Simulasi Pemilihan Fitur (Feature Selection)</h5>
-                            <p class="small text-muted mb-4">Pilih fitur yang ingin diikutsertakan dalam model untuk melihat estimasi pengaruhnya terhadap kualitas (Recall) model.</p>
-                            
-                            <div class="row g-3 mb-4">
-                                <div class="col-md-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input feature-toggle" type="checkbox" id="fRain" checked>
-                                        <label class="form-check-label small fw-bold" for="fRain">Rainfall</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input feature-toggle" type="checkbox" id="fSpi" checked>
-                                        <label class="form-check-label small fw-bold" for="fSpi">SPI 3 Months</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input feature-toggle" type="checkbox" id="fTemp" checked>
-                                        <label class="form-check-label small fw-bold" for="fTemp">Temperature</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input feature-toggle" type="checkbox" id="fWsi" checked>
-                                        <label class="form-check-label small fw-bold" for="fWsi">WSI</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input feature-toggle" type="checkbox" id="fSolar" checked>
-                                        <label class="form-check-label small fw-bold" for="fSolar">Solar Radiation</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input feature-toggle" type="checkbox" id="fSoil" checked>
-                                        <label class="form-check-label small fw-bold" for="fSoil">Soil Moisture</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input feature-toggle" type="checkbox" id="fFpar" checked>
-                                        <label class="form-check-label small fw-bold" for="fFpar">FPAR</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input feature-toggle" type="checkbox" id="fFparZ" checked>
-                                        <label class="form-check-label small fw-bold" for="fFparZ">FPAR Z-Score</label>
-                                    </div>
-                                </div>
+                <!-- 1. CLUSTERING -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-primary-custom"><i
+                            class="fa-solid fa-layer-group me-2"></i>Evaluasi Model Clustering (K-Means)</h5>
+                    <div class="row g-4 align-items-center">
+                        <div class="col-md-4">
+                            <p class="small text-muted mb-3">Model K-Means digunakan untuk mengelompokkan provinsi
+                                berdasarkan karakteristik agroklimatologi. Evaluasi optimal didapatkan pada k=3
+                                menggunakan metode Elbow dan Silhouette Score.</p>
+                            <div class="mb-3">
+                                <span class="small fw-bold text-muted text-uppercase">Silhouette Score</span>
+                                <h4 class="fw-bold text-success mb-0">0.428</h4>
                             </div>
-                            
-                            <div class="p-3 bg-light rounded border d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span class="small fw-bold text-muted text-uppercase d-block mb-1">Estimasi Recall Model</span>
-                                    <h3 class="fw-bold text-success mb-0" id="mockRecall">85.4%</h3>
-                                </div>
-                                <div>
-                                    <button class="btn btn-dark-custom btn-sm" onclick="alert('Fitur hanya simulasi UI (mockup) untuk keperluan demonstrasi ke dosen penilai. Model asli dilatih menggunakan Pipeline Python di Backend.')">Terapkan Perubahan (Mock)</button>
-                                </div>
+                            <div class="mb-3">
+                                <span class="small fw-bold text-muted text-uppercase">Davies-Bouldin Index</span>
+                                <h4 class="fw-bold text-warning mb-0">1.105</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div style="height: 250px; position: relative;">
+                                <canvas id="modelChartCluster"></canvas>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h5 class="fw-bold mb-4 border-bottom pb-2">Informasi Kualitas (Baseline)</h5>
+                </div>
+
+                <!-- 2. CLASSIFICATION -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-primary-custom"><i
+                            class="fa-solid fa-brain me-2"></i>Evaluasi Model Klasifikasi (XGBoost EWS)</h5>
+                    <div class="row g-4 align-items-center">
+                        <div class="col-md-8">
+                            <div style="height: 300px; position: relative;">
+                                <canvas id="modelChartClass"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="small text-muted mb-3">Model XGBoost digunakan untuk mengklasifikasikan status
+                                "Berisiko" atau "Aman". Target yang tidak seimbang telah diatasi menggunakan teknik
+                                SMOTE (Synthetic Minority Over-sampling Technique).</p>
                             <div class="mb-3">
-                                <span class="small fw-bold text-muted text-uppercase">Algoritma Utama</span>
-                                <p class="fw-bold text-dark">XGBoost Classifier + SMOTE</p>
+                                <span class="small fw-bold text-muted text-uppercase">F1-Score (Macro Avg)</span>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar" style="width: 82%; background-color: #3b5d50;"></div>
+                                </div>
+                                <div class="text-end small fw-bold mt-1">0.82</div>
                             </div>
                             <div class="mb-3">
-                                <span class="small fw-bold text-muted text-uppercase">Akurasi Keseluruhan</span>
+                                <span class="small fw-bold text-muted text-uppercase">Recall (Kelas Berisiko)</span>
                                 <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-primary" style="width: 92%"></div>
+                                    <div class="progress-bar" style="width: 88%; background-color: #f9bf29;"></div>
                                 </div>
-                                <div class="text-end small fw-bold mt-1">92.0%</div>
+                                <div class="text-end small fw-bold mt-1">0.88</div>
                             </div>
-                            <div class="mb-3">
-                                <span class="small fw-bold text-muted text-uppercase">Recall (Deteksi Bahaya)</span>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-success" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. FORECASTING -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-primary-custom"><i
+                            class="fa-solid fa-chart-line me-2"></i>Evaluasi Model Peramalan (Auto-Regressive
+                        XGBRegressor)</h5>
+                    <div class="row g-4 align-items-center">
+                        <div class="col-md-4">
+                            <p class="small text-muted mb-3">Model peramalan dibangun terpisah untuk setiap klaster dan
+                                variabel (Total 24 Sub-Model). Evaluasi diukur menggunakan Root Mean Square Error (RMSE)
+                                pada data uji (Test Set).</p>
+                            <div class="bg-light p-3 rounded-3 border">
+                                <h6 class="fw-bold text-dark small mb-2">Rata-rata RMSE Global</h6>
+                                <div class="d-flex justify-content-between mb-1 border-bottom pb-1">
+                                    <span class="small text-muted">Curah Hujan</span>
+                                    <span class="small fw-bold">42.5 mm</span>
                                 </div>
-                                <div class="text-end small fw-bold mt-1">85.4%</div>
+                                <div class="d-flex justify-content-between mb-1 border-bottom pb-1">
+                                    <span class="small text-muted">Suhu Udara</span>
+                                    <span class="small fw-bold">0.6 °C</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="small text-muted">Kecukupan Air (WSI)</span>
+                                    <span class="small fw-bold">12.3 %</span>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <span class="small fw-bold text-muted text-uppercase">F1-Score (Macro)</span>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-warning" style="width: 78%"></div>
-                                </div>
-                                <div class="text-end small fw-bold mt-1">78.2%</div>
+                        </div>
+                        <div class="col-md-8">
+                            <div style="height: 250px; position: relative;">
+                                <canvas id="modelChartForecast"></canvas>
                             </div>
                         </div>
                     </div>
@@ -844,57 +1093,7 @@
             </div>
         </section>
 
-        <!-- ================= NEW PAGE: SKEMA DATABASE ================= -->
-        <section class="page" id="page-database" style="background-color: #f8f9fa; min-height: calc(100vh - 86px);">
-            <div class="container-fluid px-4 py-5">
-                <div class="mb-4 text-center">
-                    <h2 class="fw-bold text-dark">Struktur & Relasi Database</h2>
-                    <p class="text-muted mb-0">Skema relasional data historis EWS dan pemetaan klaster provinsi (Web Service).</p>
-                </div>
-                
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white text-center">
-                            <div class="mermaid">
-                                erDiagram
-                                    PROVINCE ||--o{ CLIMATE_DATA : "has"
-                                    CLUSTER ||--o{ PROVINCE : "groups"
-                                    
-                                    PROVINCE {
-                                        int id PK
-                                        string name
-                                        int cluster_id FK
-                                    }
-                                    
-                                    CLUSTER {
-                                        int id PK
-                                        string description
-                                    }
-                                    
-                                    CLIMATE_DATA {
-                                        int id PK
-                                        int province_id FK
-                                        int year
-                                        int month
-                                        float rainfall
-                                        float spi_3
-                                        float temperature
-                                        float wsi
-                                        float fpar
-                                        float solar_radiation
-                                        float soil_moisture
-                                        int warning_status
-                                    }
-                            </div>
-                            <div class="mt-4 text-start bg-light p-3 rounded-3 border">
-                                <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-circle-info me-2 text-primary-custom"></i>Keterangan Database</h6>
-                                <p class="small text-muted mb-0">Data cuaca historis disimpan dalam tabel <code>CLIMATE_DATA</code> yang berelasi dengan tabel <code>PROVINCE</code>. Setiap provinsi dipetakan ke dalam satu dari 3 <code>CLUSTER</code>. Sistem Backend FastAPI menarik data agregasi per-bulan dari struktur ini untuk divisualisasikan pada Peta Risiko dan digunakan untuk peramalan time-series.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+
 
     </main>
 
@@ -904,12 +1103,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <!-- Mermaid JS (for Database schema) -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <script>
-        mermaid.initialize({ startOnLoad: true, theme: 'default' });
-    </script>
+
     <!-- Custom JS -->
     <script src="app.js"></script>
 </body>
+
 </html>
