@@ -21,7 +21,7 @@ window.switchPage = function(page) {
     if(navLink) navLink.classList.add('active');
 
     // Handle dropdown active state
-    if(page === 'eda' || page === 'model' || page === 'database') {
+    if(page === 'eda' || page === 'model') {
         const dropdown = document.getElementById('navbarDropdown');
         if(dropdown) dropdown.classList.add('active');
     }
@@ -32,6 +32,7 @@ window.switchPage = function(page) {
     if (page === 'map' && !leafletMap) initMap();
     if (page === 'map' && leafletMap) setTimeout(() => leafletMap.invalidateSize(), 200);
     if (page === 'eda') loadEDA();
+    if (page === 'model') loadModelDashboard();
 }
 
 // ===== INIT =====
@@ -41,14 +42,16 @@ document.addEventListener("DOMContentLoaded", () => {
     loadForecastProvinces();
     setupPredictForm();
     setupForecastControls();
-    
-    // Mock features toggle
-    document.querySelectorAll('.feature-toggle').forEach(t => {
-        t.addEventListener('change', () => {
-            const checkedCount = document.querySelectorAll('.feature-toggle:checked').length;
-            const mockRecall = 85.4 - ((8 - checkedCount) * 2.3);
-            document.getElementById('mockRecall').textContent = Math.max(0, mockRecall).toFixed(1) + "%";
-        });
+
+
+    // Navbar shrink on scroll
+    window.addEventListener('scroll', () => {
+        const navbar = document.querySelector('.custom-navbar');
+        if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
     });
 });
 
@@ -474,32 +477,20 @@ let edaGeojson = null;
 async function loadEDA() {
     if(edaLoaded) return;
     
-    // Init Map
-    edaMap = L.map('edaMap').setView([-2.5, 118], 5);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(edaMap);
-
-    fetch('https://raw.githubusercontent.com/superpikar/indonesia-geojson/master/indonesia-province-simple.json')
-        .then(r => r.json())
-        .then(data => {
-            edaGeojson = L.geoJSON(data, {
-                style: () => ({ color: '#9ca3af', weight: 1, opacity: 0.6, fillOpacity: 0.3, fillColor: '#3b82f6' }),
-                onEachFeature: (f, layer) => {
-                    layer.bindPopup(`<div class="fw-bold">${f.properties.Propinsi}</div>`);
-                }
-            }).addTo(edaMap);
-            loadEdaDashboard(); 
-        });
-
     document.getElementById('btnEdaApply').addEventListener('click', loadEdaDashboard);
+    document.getElementById('edaDistFeature').addEventListener('change', loadEdaDashboard);
     edaLoaded = true;
+    
+    loadEdaDashboard();
 }
 
 async function loadEdaDashboard() {
     const prov = document.getElementById('edaFilterProvince').value || 'All';
     const year = document.getElementById('edaFilterYear').value || 'All';
+    const distF = document.getElementById('edaDistFeature').value || 'Soil Moisture (gapfilled historical time series)';
 
     try {
-        const res = await fetch(`${API}/api/eda/dashboard?province=${encodeURIComponent(prov)}&year=${encodeURIComponent(year)}`);
+        const res = await fetch(`${API}/api/eda/dashboard?province=${encodeURIComponent(prov)}&year=${encodeURIComponent(year)}&dist_feature=${encodeURIComponent(distF)}`);
         const d = await res.json();
         
         if(d.error) return alert(d.error);
@@ -521,28 +512,38 @@ async function loadEdaDashboard() {
         Object.values(edaCharts).forEach(c => c.destroy());
         edaCharts = {};
 
-        // 1. Target Doughnut
+        // 1. Target Doughnut (Highlight minority)
+        const isAmanMinority = d.target_proportion.Aman < d.target_proportion.Berisiko;
         edaCharts.target = new Chart(document.getElementById('edaChartTarget'), {
             type: 'doughnut',
-            data: { labels: ['Aman', 'Berisiko'], datasets: [{ data: [d.target_proportion.Aman, d.target_proportion.Berisiko], backgroundColor: ['#16a34a', '#ef4444'], borderWidth: 0 }] },
+            data: { 
+                labels: ['Aman', 'Berisiko'], 
+                datasets: [{ 
+                    data: [d.target_proportion.Aman, d.target_proportion.Berisiko], 
+                    backgroundColor: ['#16a34a', '#ef4444'], 
+                    borderColor: ['#000000', '#000000'],
+                    borderWidth: isAmanMinority ? [3, 0] : [0, 3],
+                    offset: isAmanMinority ? [20, 0] : [0, 20]
+                }] 
+            },
             options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } } }
         });
 
-        // 2. Soil Moisture Histogram
+        // 2. Dynamic Histogram
         edaCharts.hist = new Chart(document.getElementById('edaChartHist'), {
             type: 'bar',
-            data: { labels: d.soil_moisture_dist.labels, datasets: [{ label: 'Frekuensi', data: d.soil_moisture_dist.data, backgroundColor: '#3b82f6', borderRadius: 4 }] },
+            data: { labels: d.feature_dist.labels, datasets: [{ label: 'Frekuensi', data: d.feature_dist.data, backgroundColor: '#3b5d50', borderRadius: 4 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f3f4f6' } } } }
         });
 
-        // 3. Time Series Line
+        // 3. Time Series Line (Theme colors)
         edaCharts.time = new Chart(document.getElementById('edaChartTime'), {
             type: 'line',
             data: { 
                 labels: d.time_series.labels, 
                 datasets: [
-                    { label: 'Curah Hujan (mm)', data: d.time_series.rainfall, borderColor: '#3b82f6', backgroundColor: '#3b82f6', yAxisID: 'y' },
-                    { label: 'WSI (%)', data: d.time_series.wsi, borderColor: '#16a34a', backgroundColor: '#16a34a', yAxisID: 'y1' }
+                    { label: 'Curah Hujan (mm)', data: d.time_series.rainfall, borderColor: '#3b5d50', backgroundColor: '#3b5d50', yAxisID: 'y' },
+                    { label: 'WSI (%)', data: d.time_series.wsi, borderColor: '#f9bf29', backgroundColor: '#f9bf29', yAxisID: 'y1' }
                 ] 
             },
             options: { 
@@ -557,39 +558,127 @@ async function loadEdaDashboard() {
         // 4. Radar Chart
         edaCharts.radar = new Chart(document.getElementById('edaChartRadar'), {
             type: 'radar',
-            data: { labels: d.radar.labels, datasets: [{ label: 'Rata-rata (Scaled)', data: d.radar.data, backgroundColor: 'rgba(249, 191, 41, 0.4)', borderColor: '#f9bf29', pointBackgroundColor: '#f9bf29' }] },
+            data: { labels: d.radar.labels, datasets: [{ label: 'Rata-rata', data: d.radar.data, backgroundColor: 'rgba(249, 191, 41, 0.4)', borderColor: '#f9bf29', pointBackgroundColor: '#f9bf29' }] },
             options: { responsive: true, maintainAspectRatio: false, scales: { r: { suggestedMin: 0, suggestedMax: 100 } } }
         });
 
-        // 5. Correlation Table
-        const thead = document.getElementById('edaCorrHead');
-        const tbody = document.getElementById('edaCorrBody');
-        const cols = Object.keys(d.correlation);
-        
-        thead.innerHTML = '<th>Var</th>' + cols.map(c => `<th>${c.substring(0,6)}</th>`).join('');
-        tbody.innerHTML = cols.map(c => {
-            return `<tr><td class="fw-bold">${c.substring(0,8)}</td>` + cols.map(c2 => {
-                let val = d.correlation[c][c2];
-                let bg = val > 0.5 ? '#fca5a5' : (val < -0.5 ? '#bfdbfe' : '#f3f4f6');
-                return `<td style="background-color: ${val === 1 ? '#e5e7eb' : bg}">${val}</td>`;
-            }).join('') + '</tr>';
-        }).join('');
+        // 5. Scatter Plot
+        edaCharts.scatter = new Chart(document.getElementById('edaChartScatter'), {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    { label: 'Aman', data: d.scatter.aman, backgroundColor: '#16a34a', pointRadius: 4, pointHoverRadius: 6 },
+                    { label: 'Berisiko', data: d.scatter.berisiko, backgroundColor: '#ef4444', borderColor: '#000000', borderWidth: 1, pointRadius: 6, pointHoverRadius: 8, pointStyle: 'triangle' }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { x: { title: { display: true, text: 'Curah Hujan (mm)' } }, y: { title: { display: true, text: 'Kelembaban Tanah' } } }
+            }
+        });
 
-        // 6. Map Update
-        if(edaGeojson) {
-            edaGeojson.eachLayer(layer => {
-                const geoName = layer.feature.properties.Propinsi;
-                const apiName = PROVINCE_NAME_MAP[geoName] || geoName;
-                const clusterId = CLUSTER_MAP[apiName];
-                let cColor = '#d1d5db';
-                if(clusterId === 0) cColor = '#3b82f6';
-                if(clusterId === 1) cColor = '#16a34a';
-                if(clusterId === 2) cColor = '#f59e0b';
-                
-                layer.setStyle({ fillColor: cColor, fillOpacity: 0.6, color: '#ffffff', weight: 1 });
-                layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><div class="small">Cluster: ${clusterId}</div>`);
-            });
-        }
+        // 6. Data Table Update
+        const tbody = document.getElementById('edaDataTable');
+        tbody.innerHTML = d.table_data.map(row => `
+            <tr>
+                <td class="fw-bold text-dark">${row.Kategori}</td>
+                <td>${row['Rainfall'] || '-'}</td>
+                <td>${row['Temperature'] || '-'}</td>
+                <td>${row['SPI - 3 months'] || '-'}</td>
+                <td>${row['Water Satisfaction Index (WSI)'] || '-'}</td>
+                <td>${row['Soil Moisture (gapfilled historical time series)'] || '-'}</td>
+                <td class="fw-bold text-danger">${row['target_biner']}</td>
+            </tr>
+        `).join('');
 
     } catch (e) { console.error("Dashboard error:", e); }
+}
+
+// ===== EWS MODEL EXPERIMENT DASHBOARD =====
+let modelLoaded = false;
+let modelCharts = {};
+
+function loadModelDashboard() {
+    if (modelLoaded) return;
+    
+    // 1. CLUSTERING: Elbow Method Chart
+    modelCharts.cluster = new Chart(document.getElementById('modelChartCluster'), {
+        type: 'line',
+        data: {
+            labels: ['k=1', 'k=2', 'k=3', 'k=4', 'k=5', 'k=6'],
+            datasets: [{
+                label: 'Inertia (Within-Cluster Sum of Square)',
+                data: [1240, 850, 310, 260, 220, 195],
+                borderColor: '#3b5d50',
+                backgroundColor: 'rgba(59, 93, 80, 0.1)',
+                borderWidth: 3,
+                pointBackgroundColor: ['#3b5d50', '#3b5d50', '#f9bf29', '#3b5d50', '#3b5d50', '#3b5d50'],
+                pointRadius: [4, 4, 8, 4, 4, 4],
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { padding: 10 } },
+            scales: { y: { beginAtZero: false, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // 2. CLASSIFICATION: Feature Importance (Horizontal Bar)
+    modelCharts.class = new Chart(document.getElementById('modelChartClass'), {
+        type: 'bar',
+        data: {
+            labels: ['Kelembaban Tanah', 'Curah Hujan', 'Kecukupan Air (WSI)', 'Suhu Udara', 'Indeks Kekeringan', 'Radiasi Surya'],
+            datasets: [{
+                label: 'Gain Score',
+                data: [0.38, 0.25, 0.16, 0.11, 0.06, 0.04],
+                backgroundColor: '#3b5d50',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { grid: { color: '#f3f4f6' } }, y: { grid: { display: false } } }
+        }
+    });
+
+    // 3. FORECASTING: Actual vs Predicted Test Set (Rainfall Sample)
+    modelCharts.forecast = new Chart(document.getElementById('modelChartForecast'), {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
+            datasets: [
+                {
+                    label: 'Aktual (Test Set)',
+                    data: [180, 210, 195, 140, 95, 60, 45, 40, 75, 120, 160, 205],
+                    borderColor: '#3b5d50',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 4
+                },
+                {
+                    label: 'Prediksi XGBRegressor',
+                    data: [172, 200, 188, 145, 102, 65, 52, 48, 68, 115, 155, 198],
+                    borderColor: '#f9bf29',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 4,
+                    pointStyle: 'rect'
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { title: { display: true, text: 'Curah Hujan (mm)' }, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    modelLoaded = true;
 }
