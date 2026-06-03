@@ -26,7 +26,7 @@ app.add_middleware(
 # --- Paths ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "01_dapur_jupyter", "data")
-MODEL_DIR = os.path.join(BASE_DIR, "..", "01_dapur_jupyter", "models")
+MODEL_DIR = os.path.join(BASE_DIR, "..", "01_dapur_jupyter", "models_output")
 
 # --- Load Data & Models on Startup ---
 df_master = None
@@ -58,7 +58,7 @@ def load_resources():
     global PROVINCES_LIST, CLUSTER_MAP
 
     # Load master data
-    master_path = os.path.join(DATA_DIR, "data_master_clustered_final.csv")
+    master_path = os.path.join(DATA_DIR, "data_master_clustered.csv")
     df_master = pd.read_csv(master_path)
     df_master['date'] = pd.to_datetime(df_master['date'])
     df_master['year'] = df_master['date'].dt.year
@@ -71,18 +71,25 @@ def load_resources():
         cluster = df_master[df_master['region_name'] == prov]['Cluster_Wilayah'].mode().values[0]
         CLUSTER_MAP[prov] = int(cluster)
 
-    # Load EWS pipelines (now a single dictionary keyed by cluster_id)
-    ews_path = os.path.join(MODEL_DIR, "agriva_master_classifier.pkl")
-    if os.path.exists(ews_path):
-        ews_pipelines = joblib.load(ews_path)
+    # Load EWS pipelines
+    ews_pipelines = {}
+    for cluster_id in [0, 1, 2]:
+        path = os.path.join(MODEL_DIR, f"pipeline_ews_biner_cluster_{cluster_id}.pkl")
+        if os.path.exists(path):
+            ews_pipelines[cluster_id] = joblib.load(path)
 
-    # Load forecast resources (now a single dictionary keyed by cluster_id -> target -> model)
-    forecast_path = os.path.join(MODEL_DIR, "agriva_master_forecaster.pkl")
+    # Load forecast resources (global MultiOutputRegressor)
+    forecast_path = os.path.join(MODEL_DIR, "model_forecast_global.pkl")
     if os.path.exists(forecast_path):
         forecast_model = joblib.load(forecast_path)
 
-    # We will use df_master for both EDA and forecasting now since it contains all historical data and lags
-    df_forecast = df_master.copy()
+    # We will use df_forecast for forecasting (loaded from data_forecast_ready.csv)
+    forecast_data_path = os.path.join(DATA_DIR, "data_forecast_ready.csv")
+    if os.path.exists(forecast_data_path):
+        df_forecast = pd.read_csv(forecast_data_path)
+        df_forecast['date'] = pd.to_datetime(df_forecast['date'])
+    else:
+        df_forecast = df_master.copy()
 
     print("[OK] All resources loaded successfully!")
     print(f"   Provinces: {len(PROVINCES_LIST)}")
@@ -275,9 +282,8 @@ def predict_ews(req: PredictionRequest):
     if cluster_id not in ews_pipelines:
         raise HTTPException(status_code=400, detail=f"Model for cluster {cluster_id} not found.")
 
-    model_dict = ews_pipelines[cluster_id]
-    pipeline = model_dict['model_xgboost']
-    threshold = model_dict['threshold_siaga']
+    pipeline = ews_pipelines[cluster_id]
+    threshold = 0.5
 
     # Get latest historical row for this province to fill in lag and rolling features
     prov_data = df_master[df_master['region_name'] == req.province].sort_values('date')
@@ -365,23 +371,17 @@ def forecast_predict(province: str, steps: int = 3):
     if province not in PROVINCES_LIST:
         raise HTTPException(status_code=400, detail=f"Province '{province}' not found.")
 
-    if steps < 1 or steps > 36:
-        raise HTTPException(status_code=400, detail="Steps must be between 1 and 36.")
+    if steps < 0 or steps > 36:
+        raise HTTPException(status_code=400, detail="Steps must be between 0 and 36.")
 
-    # Get the latest data for this province from df_master
-    prov_data = df_master[df_master['region_name'] == province].sort_values('date').tail(100).copy()
+    # Get the latest data for this province from df_forecast
+    prov_data = df_forecast[df_forecast['region_name'] == province].sort_values('date').tail(100).copy()
 
     if prov_data.empty:
         raise HTTPException(status_code=404, detail=f"No forecast data for: {province}")
 
-    cluster_id = CLUSTER_MAP.get(province, 0)
-    if forecast_model is None or cluster_id not in forecast_model:
-        raise HTTPException(status_code=500, detail=f"Forecast model for cluster {cluster_id} not found.")
-
-    forecaster_dict = forecast_model[cluster_id]
-    
-    # Use exact feature names from the first model
-    feature_cols = list(forecaster_dict[TARGET_FORECAST_COLS[0]].feature_names_in_)
+    # Use exact feature names from the global model
+    feature_cols = list(forecast_model.feature_names_in_)
 
     predictions = []
 
@@ -401,40 +401,29 @@ def forecast_predict(province: str, steps: int = 3):
         new_row['month_extracted'] = next_date.month
         new_row['quarter_extracted'] = (next_date.month - 1) // 3 + 1
         new_row['semester_extracted'] = 1 if next_date.month <= 6 else 2
+        new_row['dayofyear'] = next_date.dayofyear
+        new_row['weekofyear'] = next_date.isocalendar()[1]
 
-        # Update short-term lags and rolling features dynamically
-        for target in TARGET_FORECAST_COLS:
+        # Update short-term lags dynamically
+        lag_targets = ['Rainfall', 'Temperature', 'Soil Moisture (gapfilled historical time series)']
+        for t in lag_targets:
             if len(prov_data) >= 1:
-                val_1 = prov_data[target].iloc[-1]
-                new_row[f'{target}_lag1'] = val_1
-                new_row[f'{target}_lag_1'] = val_1
-            
+                new_row[f'{t}_lag_1'] = prov_data[t].iloc[-1]
+            if len(prov_data) >= 2:
+                new_row[f'{t}_lag_2'] = prov_data[t].iloc[-2]
             if len(prov_data) >= 3:
-                val_3 = prov_data[target].iloc[-3]
-                new_row[f'{target}_lag3'] = val_3
-                new_row[f'{target}_lag_3'] = val_3
-                
-            if len(prov_data) >= 6:
-                val_6 = prov_data[target].iloc[-6]
-                new_row[f'{target}_lag_6'] = val_6
-                
-            if len(prov_data) >= 3:
-                val_rm3 = prov_data[target].iloc[-3:].mean()
-                new_row[f'{target}_rollmean3'] = val_rm3
+                new_row[f'{t}_lag_3'] = prov_data[t].iloc[-3]
 
         # Prepare X_pred with exact columns
-        X_pred = pd.DataFrame([new_row])[feature_cols].fillna(0)
+        X_pred = pd.DataFrame([new_row]).reindex(columns=feature_cols, fill_value=0)
 
-        # Predict each target separately
+        # Predict all targets at once
         pred_dict = {}
-        for target in TARGET_FORECAST_COLS:
-            if target in forecaster_dict:
-                pred_val = forecaster_dict[target].predict(X_pred)[0]
-                pred_dict[target] = round(float(pred_val), 3)
-                new_row[target] = pred_val
-            else:
-                pred_dict[target] = 0
-                new_row[target] = 0
+        pred_vals = forecast_model.predict(X_pred)[0]
+        for i, target in enumerate(TARGET_FORECAST_COLS):
+            pred_val = round(float(pred_vals[i]), 3)
+            pred_dict[target] = pred_val
+            new_row[target] = pred_val
 
         predictions.append({
             "date": next_date.strftime('%Y-%m-%d'),
@@ -445,10 +434,26 @@ def forecast_predict(province: str, steps: int = 3):
         # Append predicted row to history for autoregressive lags
         prov_data = pd.concat([prov_data, pd.DataFrame([new_row])], ignore_index=True)
 
+    # Prepare historical test set performance (last 36 dekad)
+    historical_dates = []
+    historical_actual = {}
+    historical_pred = {}
+    hist_df = df_forecast[df_forecast['region_name'] == province].sort_values('date').tail(36).copy()
+    if not hist_df.empty:
+        historical_dates = [pd.to_datetime(d).strftime('%Y-%m-%d') for d in hist_df['date']]
+        X_hist = hist_df.reindex(columns=feature_cols, fill_value=0)
+        hist_preds = forecast_model.predict(X_hist)
+        for i, target in enumerate(TARGET_FORECAST_COLS):
+            historical_pred[target] = [round(float(p), 3) for p in hist_preds[:, i]]
+            historical_actual[target] = [round(float(a), 3) for a in hist_df[target]]
+
     return {
         "province": province,
         "steps": steps,
         "predictions": predictions,
+        "historical_dates": historical_dates,
+        "historical_actual": historical_actual,
+        "historical_pred": historical_pred,
     }
 
 

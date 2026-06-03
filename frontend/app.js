@@ -347,6 +347,8 @@ async function loadForecastProvinces() {
         const sel = document.getElementById('forecastProvince');
         if(d.provinces) {
             sel.innerHTML = d.provinces.map(p => `<option value="${p}">${p}</option>`).join('');
+            // Trigger automatic initial chart load
+            setTimeout(() => runForecast(), 500);
         }
     } catch (e) { console.error(e); }
 }
@@ -354,13 +356,21 @@ async function loadForecastProvinces() {
 function setupForecastControls() {
     const slider = document.getElementById('forecastSteps');
     slider.addEventListener('input', () => { 
-        document.getElementById('stepsValue').textContent = `${slider.value} Bulan`; 
+        document.getElementById('stepsValue').textContent = `${slider.value} Dekad`; 
     });
+    // Auto-update when slider is released
+    slider.addEventListener('change', runForecast);
+    
     document.getElementById('btnForecast').addEventListener('click', runForecast);
+    
+    // Listen to changes on province/variable to auto-update
+    document.getElementById('forecastProvince').addEventListener('change', runForecast);
+    document.getElementById('forecastVariable').addEventListener('change', runForecast);
 }
 
 async function runForecast() {
     const btn = document.getElementById('btnForecast');
+    if(!btn) return;
     const originalContent = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Memproses...';
     btn.disabled = true;
@@ -373,37 +383,38 @@ async function runForecast() {
     document.getElementById('forecastChartBadge').textContent = varSelect.options[varSelect.selectedIndex].text;
 
     try {
-        const hRes = await fetch(`${API}/api/forecast/history?province=${encodeURIComponent(province)}&variable=${encodeURIComponent(variable)}`);
-        if(!hRes.ok) throw new Error("Gagal mengambil data historis");
-        const hData = await hRes.json();
-
         const fRes = await fetch(`${API}/api/forecast/predict?province=${encodeURIComponent(province)}&steps=${steps}`, { method: "POST" });
         if(!fRes.ok) throw new Error("Gagal menjalankan forecast");
         const fData = await fRes.json();
 
-        renderForecastChart(hData.data, fData.predictions, variable);
+        renderForecastChart(fData, variable);
         renderForecastTable(fData.predictions);
     } catch (e) { 
         console.error("Forecast error:", e); 
-        alert("Error: " + e.message); 
     } finally {
         btn.innerHTML = originalContent;
         btn.disabled = false;
     }
 }
 
-function renderForecastChart(history, predictions, variable) {
+function renderForecastChart(fData, variable) {
     const ctx = document.getElementById('chartForecast');
     if (forecastChart) forecastChart.destroy();
 
-    const histLabels = history.map(h => h.date);
-    const histValues = history.map(h => h.value);
-    const predLabels = predictions.map(p => p.date || `Bulan ${p.step}`);
-    const predValues = predictions.map(p => p.predicted[variable] || 0);
+    const histLabels = fData.historical_dates || [];
+    const histActual = (fData.historical_actual && fData.historical_actual[variable]) ? fData.historical_actual[variable] : [];
+    const histPred = (fData.historical_pred && fData.historical_pred[variable]) ? fData.historical_pred[variable] : [];
+    
+    const predLabels = fData.predictions.map(p => p.date || `Dekad ${p.step}`);
+    const predValues = fData.predictions.map(p => p.predicted[variable] || 0);
 
     const allLabels = [...histLabels, ...predLabels];
-    const histDataset = [...histValues, ...Array(predLabels.length).fill(null)];
-    const predDataset = [...Array(histLabels.length - 1).fill(null), histValues[histValues.length - 1], ...predValues];
+    
+    const actualDataset = [...histActual, ...Array(predLabels.length).fill(null)];
+    const modelDataset = [...histPred, ...Array(predLabels.length).fill(null)];
+    
+    // Connect the future forecast line to the last historical point
+    const futureDataset = [...Array(histLabels.length - 1).fill(null), histActual[histActual.length - 1], ...predValues];
 
     forecastChart = new Chart(ctx, {
         type: 'line',
@@ -411,18 +422,29 @@ function renderForecastChart(history, predictions, variable) {
             labels: allLabels,
             datasets: [
                 { 
-                    label: 'Data Historis', 
-                    data: histDataset, 
+                    label: 'Data Aktual (Training)', 
+                    data: actualDataset, 
                     borderColor: '#3b5d50', 
                     backgroundColor: 'rgba(59, 93, 80, 0.1)', 
-                    fill: true, 
+                    fill: false, 
                     tension: 0.3, 
-                    pointRadius: 0, 
+                    pointRadius: 2, 
                     borderWidth: 2 
                 },
                 { 
-                    label: 'Proyeksi AI (Forecast)', 
-                    data: predDataset, 
+                    label: 'Prediksi Model (Testing)', 
+                    data: modelDataset, 
+                    borderColor: '#10b981', 
+                    backgroundColor: 'transparent', 
+                    fill: false, 
+                    tension: 0.3, 
+                    pointRadius: 0, 
+                    borderWidth: 2,
+                    borderDash: [5, 5]
+                },
+                { 
+                    label: 'Peramalan Masa Depan', 
+                    data: futureDataset, 
                     borderColor: '#f9bf29', 
                     backgroundColor: 'rgba(249, 191, 41, 0.1)', 
                     fill: true, 
