@@ -138,19 +138,16 @@ async function loadMapData() {
                 const geoName = layer.feature.properties.Propinsi;
                 const apiName = PROVINCE_NAME_MAP[geoName] || geoName;
                 const info = mapData[apiName];
-                
-                let showLayer = true;
 
                 if (info) {
                     const isRisk = info.warning_code === 1;
                     const clusterStr = info.cluster.toString();
 
-                    // Apply Controls Filter
-                    if(filterCluster !== 'all' && clusterStr !== filterCluster) showLayer = false;
-                    if(filterStatus === 'aman' && isRisk) showLayer = false;
-                    if(filterStatus === 'risiko' && !isRisk) showLayer = false;
+                    let matchCluster = (filterCluster === 'all' || clusterStr === filterCluster);
+                    let matchStatus = (filterStatus === 'all' || (filterStatus === 'aman' && !isRisk) || (filterStatus === 'risiko' && isRisk));
 
-                    if(showLayer) {
+                    if (matchCluster && matchStatus) {
+                        // Fully matched
                         const customStyle = { 
                             fillColor: isRisk ? '#ef4444' : '#16a34a', 
                             color: isRisk ? '#dc2626' : '#15803d', 
@@ -166,12 +163,18 @@ async function loadMapData() {
 
                         sumTemp += info.avg_temperature;
                         countTemp++;
+                    } else if (matchCluster && !matchStatus) {
+                        // Matches cluster, but fails status filter (Show as gray but keep data)
+                        const grayStyle = { fillColor: '#9ca3af', color: '#6b7280', fillOpacity: 0.6, weight: 1.5 };
+                        layer.setStyle(grayStyle);
+                        layer.options.customStyle = grayStyle;
+                        layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><span class="badge bg-secondary mb-2">Tidak Masuk Filter Status</span><div class="small text-muted">Status Asli: <strong class="${isRisk ? 'text-danger' : 'text-success'}">${info.warning}</strong><br>Cluster: ${info.cluster}<br>Curah Hujan: ${info.avg_rainfall} mm<br>Suhu: ${info.avg_temperature}°C<br>SPI-3: ${info.avg_spi}</div>`);
                     } else {
-                        // Hidden by filter
-                        const hiddenStyle = { fillColor: '#e5e7eb', color: '#d1d5db', fillOpacity: 0.2, weight: 1 };
+                        // Fails cluster filter completely (Make very faint)
+                        const hiddenStyle = { fillColor: '#f9fafb', color: '#e5e7eb', fillOpacity: 0.2, weight: 1 };
                         layer.setStyle(hiddenStyle);
                         layer.options.customStyle = hiddenStyle;
-                        layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><div class="small text-muted">Dikecualikan oleh filter.</div>`);
+                        layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><div class="small text-muted">Berada di luar filter klaster.</div>`);
                     }
                 } else {
                     const noDataStyle = { fillColor: '#f3f4f6', color: '#e5e7eb', fillOpacity: 0.3, weight: 1 };

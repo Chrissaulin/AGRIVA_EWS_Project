@@ -286,28 +286,48 @@
                 <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
                     <div class="row g-4">
                         <div class="col-md-7">
-                            <h6 class="fw-bold text-primary-custom mb-3"><i class="fa-solid fa-layer-group me-2"></i> Proses Clustering & Karakteristik Wilayah</h6>
-                            <p class="small text-muted mb-3">Sebelum klasifikasi, sistem membagi 33 Provinsi menjadi <strong>3 Kluster Agroklimatologi</strong> menggunakan K-Means berdasarkan variabel <em>Curah Hujan, Suhu, & Kelembaban Tanah</em>. Hal ini meningkatkan akurasi deteksi karena tiap kluster dilatih menggunakan model berbeda.</p>
+                            <h6 class="fw-bold text-primary-custom mb-3"><i class="fa-solid fa-layer-group me-2"></i>
+                                Proses Clustering & Karakteristik Wilayah</h6>
+                            <p class="small text-muted mb-3">Sebelum klasifikasi, sistem membagi 33 Provinsi menjadi
+                                <strong>3 Kluster Agroklimatologi</strong> menggunakan K-Means berdasarkan variabel
+                                <em>Curah Hujan, Suhu, & Kelembaban Tanah</em>. Hal ini meningkatkan akurasi deteksi
+                                karena tiap kluster dilatih menggunakan model berbeda.
+                            </p>
                             <div class="d-flex flex-wrap gap-2">
-                                <span class="badge bg-info bg-opacity-10 text-dark border border-info p-2" title="Provinsi: Aceh, Sumbar, Jambi, Sumsel, Kalbar, dll"><i class="fa-solid fa-cloud-showers-heavy text-info me-1"></i> <strong>Kluster 0: Daerah Basah</strong> (Curah hujan & kelembaban tinggi)</span>
-                                <span class="badge bg-success bg-opacity-10 text-dark border border-success p-2" title="Provinsi: Riau, Sumut, Bengkulu, Banten, Jabar, dll"><i class="fa-solid fa-cloud-sun text-success me-1"></i> <strong>Kluster 1: Daerah Normal</strong> (Iklim tropis stabil)</span>
-                                <span class="badge bg-warning bg-opacity-10 text-dark border border-warning p-2" title="Provinsi: Jateng, Jatim, Bali, NTB, NTT, dll"><i class="fa-solid fa-sun text-warning me-1"></i> <strong>Kluster 2: Daerah Kering</strong> (Suhu tinggi, curah hujan rendah)</span>
+                                <span class="badge bg-info bg-opacity-10 text-dark border border-info p-2"
+                                    title="Provinsi: Aceh, Sumbar, Jambi, Sumsel, Kalbar, dll"><i
+                                        class="fa-solid fa-cloud-showers-heavy text-info me-1"></i> <strong>Kluster 0:
+                                        Daerah Basah</strong> (Curah hujan & kelembaban tinggi)</span>
+                                <span class="badge bg-success bg-opacity-10 text-dark border border-success p-2"
+                                    title="Provinsi: Riau, Sumut, Bengkulu, Banten, Jabar, dll"><i
+                                        class="fa-solid fa-cloud-sun text-success me-1"></i> <strong>Kluster 1: Daerah
+                                        Normal</strong> (Iklim tropis stabil)</span>
+                                <span class="badge bg-warning bg-opacity-10 text-dark border border-warning p-2"
+                                    title="Provinsi: Jateng, Jatim, Bali, NTB, NTT, dll"><i
+                                        class="fa-solid fa-sun text-warning me-1"></i> <strong>Kluster 2: Daerah
+                                        Kering</strong> (Suhu tinggi, curah hujan rendah)</span>
                             </div>
                         </div>
                         <div class="col-md-5" style="border-left: 1px dashed #dee2e6;">
-                            <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-triangle-exclamation me-2"></i> Keterangan Status Peta</h6>
+                            <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                Keterangan Status Peta</h6>
                             <div class="d-flex mb-3 align-items-start">
-                                <div class="bg-danger bg-opacity-10 text-danger rounded p-2 me-3"><i class="fa-solid fa-xmark"></i></div>
+                                <div class="bg-danger bg-opacity-10 text-danger rounded p-2 me-3"><i
+                                        class="fa-solid fa-xmark"></i></div>
                                 <div>
                                     <span class="fw-bold small text-dark d-block">Merah (Berisiko Tinggi)</span>
-                                    <span class="small text-muted" style="line-height: 1.2;">Potensi defisit air, kekeringan ekstrem, hama spesifik cuaca, atau gagal panen massal. Peringatan Dini Aktif.</span>
+                                    <span class="small text-muted" style="line-height: 1.2;">Potensi defisit air,
+                                        kekeringan ekstrem, hama spesifik cuaca, atau gagal panen massal. Peringatan
+                                        Dini Aktif.</span>
                                 </div>
                             </div>
                             <div class="d-flex align-items-start">
-                                <div class="bg-success bg-opacity-10 text-success rounded p-2 me-3"><i class="fa-solid fa-check"></i></div>
+                                <div class="bg-success bg-opacity-10 text-success rounded p-2 me-3"><i
+                                        class="fa-solid fa-check"></i></div>
                                 <div>
                                     <span class="fw-bold small text-dark d-block">Hijau (Aman)</span>
-                                    <span class="small text-muted" style="line-height: 1.2;">Kondisi pengairan stabil, cuaca mendukung, indeks vegetasi (FPAR) normal untuk masa tanam.</span>
+                                    <span class="small text-muted" style="line-height: 1.2;">Kondisi pengairan stabil,
+                                        cuaca mendukung, indeks vegetasi (FPAR) normal untuk masa tanam.</span>
                                 </div>
                             </div>
                         </div>
@@ -553,7 +573,7 @@
 
                                 <button type="submit" class="btn w-100 py-3 fw-bold text-dark" id="btnPredict"
                                     style="background-color: #a7f3d0; border: 2px solid #059669; font-size: 1.1rem; border-radius: 12px; transition: all 0.3s;">
-                                    <i class="fa-solid fa-wand-magic-sparkles me-2"></i>JALANKAN SIMULASI DETEKSI >
+                                    JALANKAN SIMULASI DETEKSI
                                 </button>
                             </form>
 
@@ -845,7 +865,8 @@
                                     <option value="SPI - 3 months">Indeks Kekeringan</option>
                                     <option value="Water Satisfaction Index (WSI)">Kecukupan Air</option>
                                     <option value="Solar Radiation">Radiasi Matahari</option>
-                                    <option value="Soil Moisture (gapfilled historical time series)" selected>Kelembaban Tanah</option>
+                                    <option value="Soil Moisture (gapfilled historical time series)" selected>Kelembaban
+                                        Tanah</option>
                                     <option value="FPAR">Pertumbuhan Vegetasi</option>
                                 </select>
                             </div>
@@ -919,15 +940,19 @@
             <div class="container-fluid px-4 py-5">
                 <div class="mb-4">
                     <h2 class="fw-bold text-dark">Kinerja & Evaluasi Model Machine Learning</h2>
-                    <p class="text-muted mb-0">Analisis metrik evaluasi untuk model Clustering (K-Means), Classification (XGBoost), dan Forecasting (XGBRegressor).</p>
+                    <p class="text-muted mb-0">Analisis metrik evaluasi untuk model Clustering (K-Means), Classification
+                        (XGBoost), dan Forecasting (XGBRegressor).</p>
                 </div>
 
                 <!-- 1. CLUSTERING -->
                 <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
-                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-primary-custom"><i class="fa-solid fa-layer-group me-2"></i>Evaluasi Model Clustering (K-Means)</h5>
+                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-primary-custom"><i
+                            class="fa-solid fa-layer-group me-2"></i>Evaluasi Model Clustering (K-Means)</h5>
                     <div class="row g-4 align-items-center">
                         <div class="col-md-4">
-                            <p class="small text-muted mb-3">Model K-Means digunakan untuk mengelompokkan provinsi berdasarkan karakteristik agroklimatologi. Evaluasi optimal didapatkan pada k=3 menggunakan metode Elbow dan Silhouette Score.</p>
+                            <p class="small text-muted mb-3">Model K-Means digunakan untuk mengelompokkan provinsi
+                                berdasarkan karakteristik agroklimatologi. Evaluasi optimal didapatkan pada k=3
+                                menggunakan metode Elbow dan Silhouette Score.</p>
                             <div class="mb-3">
                                 <span class="small fw-bold text-muted text-uppercase">Silhouette Score</span>
                                 <h4 class="fw-bold text-success mb-0">0.428</h4>
@@ -947,7 +972,8 @@
 
                 <!-- 2. CLASSIFICATION -->
                 <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
-                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-primary-custom"><i class="fa-solid fa-brain me-2"></i>Evaluasi Model Klasifikasi (XGBoost EWS)</h5>
+                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-primary-custom"><i
+                            class="fa-solid fa-brain me-2"></i>Evaluasi Model Klasifikasi (XGBoost EWS)</h5>
                     <div class="row g-4 align-items-center">
                         <div class="col-md-8">
                             <div style="height: 300px; position: relative;">
@@ -955,7 +981,9 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <p class="small text-muted mb-3">Model XGBoost digunakan untuk mengklasifikasikan status "Berisiko" atau "Aman". Target yang tidak seimbang telah diatasi menggunakan teknik SMOTE (Synthetic Minority Over-sampling Technique).</p>
+                            <p class="small text-muted mb-3">Model XGBoost digunakan untuk mengklasifikasikan status
+                                "Berisiko" atau "Aman". Target yang tidak seimbang telah diatasi menggunakan teknik
+                                SMOTE (Synthetic Minority Over-sampling Technique).</p>
                             <div class="mb-3">
                                 <span class="small fw-bold text-muted text-uppercase">F1-Score (Macro Avg)</span>
                                 <div class="progress" style="height: 8px;">
@@ -976,10 +1004,14 @@
 
                 <!-- 3. FORECASTING -->
                 <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-primary-custom"><i class="fa-solid fa-chart-line me-2"></i>Evaluasi Model Peramalan (Auto-Regressive XGBRegressor)</h5>
+                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-primary-custom"><i
+                            class="fa-solid fa-chart-line me-2"></i>Evaluasi Model Peramalan (Auto-Regressive
+                        XGBRegressor)</h5>
                     <div class="row g-4 align-items-center">
                         <div class="col-md-4">
-                            <p class="small text-muted mb-3">Model peramalan dibangun terpisah untuk setiap klaster dan variabel (Total 24 Sub-Model). Evaluasi diukur menggunakan Root Mean Square Error (RMSE) pada data uji (Test Set).</p>
+                            <p class="small text-muted mb-3">Model peramalan dibangun terpisah untuk setiap klaster dan
+                                variabel (Total 24 Sub-Model). Evaluasi diukur menggunakan Root Mean Square Error (RMSE)
+                                pada data uji (Test Set).</p>
                             <div class="bg-light p-3 rounded-3 border">
                                 <h6 class="fw-bold text-dark small mb-2">Rata-rata RMSE Global</h6>
                                 <div class="d-flex justify-content-between mb-1 border-bottom pb-1">
