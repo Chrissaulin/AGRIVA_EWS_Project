@@ -133,6 +133,20 @@ async function loadMapData() {
         let countSafe = 0, countRisk = 0;
         let sumTemp = 0, countTemp = 0;
 
+        // Calculate totals based on real dataset (33 provinces) instead of the 32 map polygons
+        Object.values(mapData).forEach(info => {
+            const isRisk = info.warning_code === 1;
+            const clusterStr = info.cluster.toString();
+            let matchCluster = (filterCluster === 'all' || clusterStr === filterCluster);
+            let matchStatus = (filterStatus === 'all' || (filterStatus === 'aman' && !isRisk) || (filterStatus === 'risiko' && isRisk));
+            if (matchCluster && matchStatus) {
+                if(isRisk) countRisk++;
+                else countSafe++;
+                sumTemp += info.avg_temperature;
+                countTemp++;
+            }
+        });
+
         if (geojsonLayer) {
             geojsonLayer.eachLayer(layer => {
                 const geoName = layer.feature.properties.Propinsi;
@@ -157,12 +171,6 @@ async function loadMapData() {
                         layer.setStyle(customStyle);
                         layer.options.customStyle = customStyle;
                         layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><span class="badge ${isRisk ? 'bg-danger' : 'bg-success'} mb-2">${info.warning}</span><div class="small text-muted">Cluster: ${info.cluster}<br>Curah Hujan: ${info.avg_rainfall} mm<br>Suhu: ${info.avg_temperature}°C<br>SPI-3: ${info.avg_spi}</div>`);
-                        
-                        if(isRisk) countRisk++;
-                        else countSafe++;
-
-                        sumTemp += info.avg_temperature;
-                        countTemp++;
                     } else if (matchCluster && !matchStatus) {
                         // Matches cluster, but fails status filter (Show as gray but keep data)
                         const grayStyle = { fillColor: '#9ca3af', color: '#6b7280', fillOpacity: 0.6, weight: 1.5 };
