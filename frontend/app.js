@@ -818,21 +818,21 @@ function loadModelDashboard() {
             datasets: [
                 {
                     label: 'Klaster 0 (Basah)',
-                    data: Array.from({length: 40}, () => ({x: 71.58 + (Math.random()*15-7.5), y: 25.95 + (Math.random()*2-1)})),
+                    data: Array.from({length: 18}, () => ({x: 71.58 + (Math.random()*15-7.5), y: 25.95 + (Math.random()*2-1)})),
                     backgroundColor: 'rgba(13, 202, 240, 0.7)',
                     borderColor: '#0dcaf0',
                     pointRadius: 5
                 },
                 {
                     label: 'Klaster 1 (Kering)',
-                    data: Array.from({length: 40}, () => ({x: 56.48 + (Math.random()*15-7.5), y: 25.38 + (Math.random()*2-1)})),
+                    data: Array.from({length: 9}, () => ({x: 56.48 + (Math.random()*15-7.5), y: 25.38 + (Math.random()*2-1)})),
                     backgroundColor: 'rgba(25, 135, 84, 0.7)',
                     borderColor: '#198754',
                     pointRadius: 5
                 },
                 {
                     label: 'Klaster 2 (Super Basah)',
-                    data: Array.from({length: 20}, () => ({x: 72.27 + (Math.random()*15-7.5), y: 23.22 + (Math.random()*2-1)})),
+                    data: Array.from({length: 6}, () => ({x: 72.27 + (Math.random()*15-7.5), y: 23.22 + (Math.random()*2-1)})),
                     backgroundColor: 'rgba(255, 193, 7, 0.7)',
                     borderColor: '#ffc107',
                     pointRadius: 5
