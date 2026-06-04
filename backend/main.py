@@ -26,12 +26,12 @@ app.add_middleware(
 # --- Paths ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "01_dapur_jupyter", "data")
-MODEL_DIR = os.path.join(BASE_DIR, "..", "01_dapur_jupyter", "models_output")
+MODEL_DIR = os.path.join(BASE_DIR, "..", "01_dapur_jupyter", "models")
 
 # --- Load Data & Models on Startup ---
 df_master = None
 df_forecast = None
-ews_pipelines = {}
+ews_pipeline = None
 forecast_model = None
 province_encoder = None
 
@@ -54,11 +54,11 @@ TARGET_FORECAST_COLS = [
 
 @app.on_event("startup")
 def load_resources():
-    global df_master, df_forecast, ews_pipelines, forecast_model, province_encoder
+    global df_master, df_forecast, ews_pipeline, forecast_model, province_encoder
     global PROVINCES_LIST, CLUSTER_MAP
 
     # Load master data
-    master_path = os.path.join(DATA_DIR, "data_master_clustered.csv")
+    master_path = os.path.join(DATA_DIR, "data_master_clustered_final.csv")
     df_master = pd.read_csv(master_path)
     df_master['date'] = pd.to_datetime(df_master['date'])
     df_master['year'] = df_master['date'].dt.year
@@ -72,14 +72,12 @@ def load_resources():
         CLUSTER_MAP[prov] = int(cluster)
 
     # Load EWS pipelines
-    ews_pipelines = {}
-    for cluster_id in [0, 1, 2]:
-        path = os.path.join(MODEL_DIR, f"pipeline_ews_biner_cluster_{cluster_id}.pkl")
-        if os.path.exists(path):
-            ews_pipelines[cluster_id] = joblib.load(path)
+    path = os.path.join(MODEL_DIR, "agriva_master_classifier.pkl")
+    if os.path.exists(path):
+        ews_pipeline = joblib.load(path)
 
-    # Load forecast resources (global MultiOutputRegressor)
-    forecast_path = os.path.join(MODEL_DIR, "model_forecast_global.pkl")
+    # Load forecast resources
+    forecast_path = os.path.join(MODEL_DIR, "agriva_master_forecaster.pkl")
     if os.path.exists(forecast_path):
         forecast_model = joblib.load(forecast_path)
 
@@ -93,7 +91,7 @@ def load_resources():
 
     print("[OK] All resources loaded successfully!")
     print(f"   Provinces: {len(PROVINCES_LIST)}")
-    print(f"   EWS Pipelines: {'Loaded' if ews_pipelines else 'Not Found'}")
+    print(f"   EWS Pipeline: {'Loaded' if ews_pipeline else 'Not Found'}")
     print(f"   Forecast Model: {'Loaded' if forecast_model else 'Not Found'}")
 
 
@@ -279,11 +277,22 @@ def predict_ews(req: PredictionRequest):
     """Make EWS prediction"""
     cluster_id = CLUSTER_MAP.get(req.province, 0)
 
-    if cluster_id not in ews_pipelines:
-        raise HTTPException(status_code=400, detail=f"Model for cluster {cluster_id} not found.")
+    if ews_pipeline is None:
+        raise HTTPException(status_code=500, detail="EWS Master Pipeline not loaded.")
 
-    pipeline = ews_pipelines[cluster_id]
-    threshold = 0.5
+    if type(ews_pipeline) == dict:
+        if cluster_id not in ews_pipeline:
+            raise HTTPException(status_code=400, detail=f"Model for cluster {cluster_id} not found in master classifier.")
+        cluster_dict = ews_pipeline[cluster_id]
+        if type(cluster_dict) == dict and 'model_xgboost' in cluster_dict:
+            pipeline = cluster_dict['model_xgboost']
+            threshold = cluster_dict.get('threshold_siaga', 0.5)
+        else:
+            pipeline = cluster_dict
+            threshold = 0.5
+    else:
+        pipeline = ews_pipeline
+        threshold = 0.5
 
     # Get latest historical row for this province to fill in lag and rolling features
     prov_data = df_master[df_master['region_name'] == req.province].sort_values('date')
@@ -380,8 +389,11 @@ def forecast_predict(province: str, steps: int = 3):
     if prov_data.empty:
         raise HTTPException(status_code=404, detail=f"No forecast data for: {province}")
 
-    # Use exact feature names from the global model
-    feature_cols = list(forecast_model.feature_names_in_)
+    cluster_id = CLUSTER_MAP.get(province, 0)
+    if cluster_id not in forecast_model:
+        raise HTTPException(status_code=400, detail=f"Forecast model for cluster {cluster_id} not found.")
+    
+    cluster_models = forecast_model[cluster_id]
 
     predictions = []
 
@@ -389,7 +401,7 @@ def forecast_predict(province: str, steps: int = 3):
         last_date = pd.to_datetime(prov_data['date'].iloc[-1])
         next_date = last_date + pd.Timedelta(days=10)
 
-        # Create new feature dict from the LAST row (to forward fill static/long-term features)
+        # Create new feature dict from the LAST row
         new_row = prov_data.iloc[-1].to_dict()
 
         # Update time features
@@ -404,26 +416,37 @@ def forecast_predict(province: str, steps: int = 3):
         new_row['dayofyear'] = next_date.dayofyear
         new_row['weekofyear'] = next_date.isocalendar()[1]
 
-        # Update short-term lags dynamically
-        lag_targets = ['Rainfall', 'Temperature', 'Soil Moisture (gapfilled historical time series)']
+        # Update short-term lags dynamically (covering old and new names)
+        lag_targets = ['Rainfall', 'Temperature', 'Soil Moisture (gapfilled historical time series)', 'SPI - 3 months', 'Water Satisfaction Index (WSI)', 'Solar Radiation', 'FPAR', 'FPAR - zscore']
         for t in lag_targets:
             if len(prov_data) >= 1:
-                new_row[f'{t}_lag_1'] = prov_data[t].iloc[-1]
+                val1 = prov_data[t].iloc[-1]
+                new_row[f'{t}_lag_1'] = val1
+                new_row[f'{t}_lag1'] = val1
             if len(prov_data) >= 2:
                 new_row[f'{t}_lag_2'] = prov_data[t].iloc[-2]
             if len(prov_data) >= 3:
-                new_row[f'{t}_lag_3'] = prov_data[t].iloc[-3]
+                val3 = prov_data[t].iloc[-3]
+                new_row[f'{t}_lag_3'] = val3
+                new_row[f'{t}_lag3'] = val3
+                
+                # Update basic rollmean3 if needed
+                rm3 = prov_data[t].iloc[-3:].mean()
+                new_row[f'{t}_rollmean3'] = rm3
+                
+            if len(prov_data) >= 6:
+                new_row[f'{t}_lag_6'] = prov_data[t].iloc[-6]
 
-        # Prepare X_pred with exact columns
-        X_pred = pd.DataFrame([new_row]).reindex(columns=feature_cols, fill_value=0)
-
-        # Predict all targets at once
+        # Predict targets individually
         pred_dict = {}
-        pred_vals = forecast_model.predict(X_pred)[0]
-        for i, target in enumerate(TARGET_FORECAST_COLS):
-            pred_val = round(float(pred_vals[i]), 3)
-            pred_dict[target] = pred_val
-            new_row[target] = pred_val
+        for target in TARGET_FORECAST_COLS:
+            if target in cluster_models:
+                m = cluster_models[target]
+                f_cols = list(m.feature_names_in_)
+                X_pred = pd.DataFrame([new_row]).reindex(columns=f_cols, fill_value=0)
+                pred_val = round(float(m.predict(X_pred)[0]), 3)
+                pred_dict[target] = pred_val
+                new_row[target] = pred_val
 
         predictions.append({
             "date": next_date.strftime('%Y-%m-%d'),
@@ -431,7 +454,6 @@ def forecast_predict(province: str, steps: int = 3):
             "predicted": pred_dict,
         })
 
-        # Append predicted row to history for autoregressive lags
         prov_data = pd.concat([prov_data, pd.DataFrame([new_row])], ignore_index=True)
 
     # Prepare historical test set performance (last 36 dekad)
@@ -441,11 +463,14 @@ def forecast_predict(province: str, steps: int = 3):
     hist_df = df_forecast[df_forecast['region_name'] == province].sort_values('date').tail(36).copy()
     if not hist_df.empty:
         historical_dates = [pd.to_datetime(d).strftime('%Y-%m-%d') for d in hist_df['date']]
-        X_hist = hist_df.reindex(columns=feature_cols, fill_value=0)
-        hist_preds = forecast_model.predict(X_hist)
-        for i, target in enumerate(TARGET_FORECAST_COLS):
-            historical_pred[target] = [round(float(p), 3) for p in hist_preds[:, i]]
-            historical_actual[target] = [round(float(a), 3) for a in hist_df[target]]
+        for target in TARGET_FORECAST_COLS:
+            if target in cluster_models:
+                m = cluster_models[target]
+                f_cols = list(m.feature_names_in_)
+                X_hist = hist_df.reindex(columns=f_cols, fill_value=0)
+                hist_preds = m.predict(X_hist)
+                historical_pred[target] = [round(float(p), 3) for p in hist_preds]
+                historical_actual[target] = [round(float(a), 3) for a in hist_df[target]]
 
     return {
         "province": province,

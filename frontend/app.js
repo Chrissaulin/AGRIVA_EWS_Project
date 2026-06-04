@@ -4,10 +4,10 @@ let leafletMap, geojsonLayer, mapData = {};
 // ===== TIER 2: FRONTEND LOGIC ENGINEER =====
 
 // ===== NAVIGATION =====
-document.querySelectorAll('.nav-link, .nav-page-link, .hero-buttons a, .benefit-section a, .footer-links a').forEach(link => {
+document.querySelectorAll('[data-page]').forEach(link => {
     link.addEventListener('click', (e) => {
+        if(link.tagName === 'A' || link.tagName === 'BUTTON') e.preventDefault();
         if(link.hasAttribute('data-page')) {
-            e.preventDefault();
             switchPage(link.dataset.page);
         }
     });

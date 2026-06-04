@@ -195,6 +195,13 @@ h1, h2, h3, h4, h5, h6 {
     bottom: 0px;
     right: -2px;
 }
+.transition-hover {
+    transition: .3s all ease;
+}
+.transition-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+}
 
 /* Team Section */
 .team-card {
