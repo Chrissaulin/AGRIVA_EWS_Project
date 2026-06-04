@@ -263,6 +263,110 @@ function setupPredictForm() {
     });
 }
 
+// ===== IMPORT CSV LOGIC =====
+let parsedCsvData = [];
+
+document.getElementById('csvFileInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    const container = document.getElementById('csvDekadSelectContainer');
+    const applyBtn = document.getElementById('btnImportApply');
+    
+    if (!file) {
+        container.classList.add('d-none');
+        applyBtn.classList.add('d-none');
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const text = evt.target.result;
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+        if (lines.length < 2) return alertInvalidCsv();
+        
+        const headers = lines[0].split(',');
+        const requiredHeaders = ["Dekad_Ke", "Tanggal", "Rainfall", "SPI_3_months", "Temperature", "WSI", "Solar_Radiation", "Soil_Moisture", "FPAR", "FPAR_zscore"];
+        
+        const isValid = requiredHeaders.every((h, i) => headers[i] === h);
+        if (!isValid) return alertInvalidCsv();
+        
+        parsedCsvData = lines.slice(1).map(line => {
+            const vals = line.split(',');
+            let obj = {};
+            requiredHeaders.forEach((h, i) => obj[h] = vals[i]);
+            return obj;
+        });
+
+        const select = document.getElementById('csvDekadSelect');
+        select.innerHTML = parsedCsvData.map((d, i) => `<option value="${i}">Dekad Ke-${d.Dekad_Ke} (Est. ${d.Tanggal})</option>`).join('');
+        
+        container.classList.remove('d-none');
+        applyBtn.classList.remove('d-none');
+    };
+    reader.readAsText(file);
+});
+
+function alertInvalidCsv() {
+    alert("Format CSV tidak sesuai! Pastikan Anda menggunakan file CSV hasil Export dari fitur Forecasting tanpa mengubah headernya.");
+    document.getElementById('csvFileInput').value = '';
+    document.getElementById('csvDekadSelectContainer').classList.add('d-none');
+    document.getElementById('btnImportApply').classList.add('d-none');
+}
+
+document.getElementById('btnImportApply').addEventListener('click', () => {
+    const idx = document.getElementById('csvDekadSelect').value;
+    if(idx === "") return;
+    const data = parsedCsvData[idx];
+    
+    const mapInput = {
+        'rainfall': 'Rainfall',
+        'spi3': 'SPI_3_months',
+        'temperature': 'Temperature',
+        'wsi': 'WSI',
+        'solarRad': 'Solar_Radiation',
+        'soilMoisture': 'Soil_Moisture',
+        'fpar': 'FPAR',
+        'fparZ': 'FPAR_zscore'
+    };
+    
+    for(const [elementId, csvKey] of Object.entries(mapInput)) {
+        const el = document.getElementById(elementId);
+        if(el && data[csvKey] !== undefined) {
+            let val = parseFloat(data[csvKey]);
+            if(isNaN(val)) continue;
+            
+            // Adjust to max/min limits of range input
+            if(el.max && val > parseFloat(el.max)) val = parseFloat(el.max);
+            if(el.min && val < parseFloat(el.min)) val = parseFloat(el.min);
+            
+            el.value = val;
+            el.dispatchEvent(new Event('input'));
+        }
+    }
+    
+    if(data.Tanggal) {
+        const d = new Date(data.Tanggal);
+        if(!isNaN(d.valueOf())) {
+            const selMonth = document.getElementById('monthExt');
+            if(selMonth) {
+                selMonth.value = d.getMonth() + 1;
+            }
+        }
+    }
+    
+    const modalEl = document.getElementById('importCsvModal');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if(modal) modal.hide();
+    else {
+        // Fallback hide
+        modalEl.classList.remove('show');
+        modalEl.style.display = 'none';
+        document.body.classList.remove('modal-open');
+        const bdrop = document.querySelector('.modal-backdrop');
+        if(bdrop) bdrop.remove();
+    }
+    
+    document.getElementById('btnPredict').click();
+});
+
 function showPredictResult(r) {
     document.getElementById('resultPlaceholder').classList.add('d-none');
     const content = document.getElementById('resultContent');

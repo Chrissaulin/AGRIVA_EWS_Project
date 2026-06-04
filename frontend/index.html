@@ -516,8 +516,12 @@
                 <div class="row g-4 justify-content-center">
                     <div class="col-lg-7">
                         <div class="card border-0 shadow-sm rounded-4 p-4">
-                            <h6 class="fw-bold mb-4 border-bottom pb-3"><i
-                                    class="fa-solid fa-sliders me-2 text-muted"></i> PARAMETER INPUT</h6>
+                            <h6 class="fw-bold mb-4 border-bottom pb-3 d-flex justify-content-between align-items-center">
+                                <span><i class="fa-solid fa-sliders me-2 text-muted"></i> PARAMETER INPUT</span>
+                                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                                    <i class="fa-solid fa-file-import me-1"></i> Import from CSV
+                                </button>
+                            </h6>
                             <form id="ewsForm">
                                 <div class="row g-4 mb-4">
                                     <div class="col-md-6">
@@ -1136,8 +1140,41 @@
         </section>
 
 
-
     </main>
+
+    <!-- Import CSV Modal -->
+    <div class="modal fade" id="importCsvModal" tabindex="-1" aria-labelledby="importCsvModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-bottom-0">
+                    <h5 class="modal-title fw-bold" id="importCsvModalLabel"><i class="fa-solid fa-file-csv text-success me-2"></i>Import Data Ramalan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">Pilih file CSV hasil Export dari halaman <strong>Forecasting</strong>. Pastikan file tersebut memiliki format kolom berikut:</p>
+                    <div class="bg-light p-2 rounded-3 small text-muted font-monospace mb-4 border" style="word-break: break-all;">
+                        Dekad_Ke, Tanggal, Rainfall, SPI_3_months, Temperature, WSI, Solar_Radiation, Soil_Moisture, FPAR, FPAR_zscore
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">1. Pilih File CSV</label>
+                        <input class="form-control" type="file" id="csvFileInput" accept=".csv">
+                    </div>
+
+                    <div id="csvDekadSelectContainer" class="mb-3 d-none">
+                        <label class="form-label fw-bold small text-uppercase text-success">2. Pilih Dekad untuk Simulasi</label>
+                        <select class="form-select border-success bg-light" id="csvDekadSelect">
+                        </select>
+                        <p class="small text-muted mt-2 mb-0"><i class="fa-solid fa-check-circle text-success me-1"></i>File valid! Pilih dekad masa depan untuk disimulasikan.</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success rounded-pill px-4 d-none" id="btnImportApply"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>Jalankan Simulasi</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
