@@ -198,7 +198,92 @@ def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All", 
     }
 
 
-# ==================== MAP ENDPOINTS ====================
+# ==================== CLASSIFICATION DASHBOARD ====================
+@app.get("/api/classification/dashboard")
+def get_classification_dashboard(cluster: str = "all"):
+    import os, numpy as np
+    
+    model_path = os.path.join(MODEL_DIR, "agriva_master_classifier.pkl")
+    if not os.path.exists(model_path):
+        return {"error": f"Model klasifikasi XGBoost tidak ditemukan di {model_path}!"}
+        
+    models = joblib.load(model_path)
+
+    # Notebook Test Set Results (Gold Standard)
+    notebook_metrics = {
+        "0": {"tp": 218, "fn": 41, "fp": 145, "tn": 427, "precision": 0.60, "recall": 0.84, "f1": 0.70, "roc": 0.88},
+        "1": {"tp": 81, "fn": 28, "fp": 88, "tn": 192, "precision": 0.48, "recall": 0.74, "f1": 0.58, "roc": 0.81},
+        "2": {"tp": 72, "fn": 30, "fp": 134, "tn": 40, "precision": 0.35, "recall": 0.71, "f1": 0.47, "roc": 0.74},
+    }
+    
+    # Global metrics
+    global_tp = sum(v["tp"] for v in notebook_metrics.values())
+    global_fn = sum(v["fn"] for v in notebook_metrics.values())
+    global_fp = sum(v["fp"] for v in notebook_metrics.values())
+    global_tn = sum(v["tn"] for v in notebook_metrics.values())
+    
+    global_recall = global_tp / (global_tp + global_fn)
+    global_precision = global_tp / (global_tp + global_fp)
+    global_f1 = 2 * (global_precision * global_recall) / (global_precision + global_recall)
+    global_roc = sum(v["roc"] for v in notebook_metrics.values()) / 3
+
+    if cluster == "all":
+        tp, fn, fp, tn = global_tp, global_fn, global_fp, global_tn
+        recall, f1, roc_auc = global_recall, global_f1, global_roc
+        opt_thresh = sum([models[i]['threshold_siaga'] for i in range(3)])/3
+    else:
+        m = notebook_metrics[cluster]
+        tp, fn, fp, tn = m["tp"], m["fn"], m["fp"], m["tn"]
+        recall, f1, roc_auc = m["recall"], m["f1"], m["roc"]
+        opt_thresh = models[int(cluster)]['threshold_siaga']
+        
+    cm = [[tn, fp], [fn, tp]]
+
+    features = ['Rainfall', 'SPI - 3 months', 'Temperature', 'Water Satisfaction Index (WSI)', 'Solar Radiation', 'Soil Moisture (gapfilled historical time series)', 'FPAR', 'FPAR - zscore', 'month', 'day', 'dekad_id', 'Rainfall_lag_1', 'Rainfall_lag_3', 'Rainfall_lag_6', 'Temperature_lag_1', 'Temperature_lag_3', 'Temperature_lag_6', 'Soil Moisture (gapfilled historical time series)_lag_1', 'Soil Moisture (gapfilled historical time series)_lag_3', 'Soil Moisture (gapfilled historical time series)_lag_6', 'Water Satisfaction Index (WSI)_lag_1', 'Water Satisfaction Index (WSI)_lag_3', 'Water Satisfaction Index (WSI)_lag_6', 'Rainfall_roll_mean_30', 'Rainfall_roll_std_30', 'Rainfall_roll_mean_90', 'Rainfall_roll_std_90', 'Soil Moisture (gapfilled historical time series)_roll_mean_30', 'Soil Moisture (gapfilled historical time series)_roll_std_30', 'Soil Moisture (gapfilled historical time series)_roll_mean_90', 'Soil Moisture (gapfilled historical time series)_roll_std_90', 'Water Satisfaction Index (WSI)_roll_mean_30', 'Water Satisfaction Index (WSI)_roll_std_30', 'Water Satisfaction Index (WSI)_roll_mean_90', 'Water Satisfaction Index (WSI)_roll_std_90']
+    
+    # Feature Importance (Dynamic from PKL)
+    if cluster != "all":
+        importances = models[int(cluster)]['model_xgboost'].feature_importances_
+    else:
+        importances = (models[0]['model_xgboost'].feature_importances_ + 
+                       models[1]['model_xgboost'].feature_importances_ + 
+                       models[2]['model_xgboost'].feature_importances_) / 3
+                       
+    indices = np.argsort(importances)[::-1][:10]
+    fi_labels = [features[i] for i in indices]
+    fi_data = importances[indices].tolist()
+        
+    # Dummy Precision-Recall curve
+    import math
+    pr_data = [{"x": float(r/20.0), "y": float(math.exp(-r/5.0))} for r in range(0, 21)]
+    
+    # Cluster Table
+    table_data = []
+    for c_id in [0, 1, 2]:
+        m = notebook_metrics[str(c_id)]
+        table_data.append({
+            "cluster": f"Klaster {c_id}",
+            "precision": m["precision"],
+            "recall": m["recall"],
+            "f1": m["f1"]
+        })
+    
+    return {
+        "kpis": {
+            "recall": f"{recall * 100:.1f}%",
+            "f1": f"{f1 * 100:.1f}%",
+            "roc_auc": round(float(roc_auc), 3),
+            "optimal_threshold": round(float(opt_thresh), 2)
+        },
+        "confusion_matrix": cm,
+        "feature_importance": {
+            "labels": fi_labels,
+            "data": [round(float(x), 4) for x in fi_data]
+        },
+        "class_proportion": [tn+fp, tp+fn],
+        "pr_curve": pr_data,
+        "table": table_data
+    }# ==================== MAP ENDPOINTS ====================
 
 @app.get("/api/map/data")
 def map_data(year: int, month: int):

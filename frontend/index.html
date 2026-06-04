@@ -49,8 +49,9 @@
                             <li><a class="dropdown-item nav-page-link" href="#" data-page="eda"><i
                                         class="fa-solid fa-chart-pie me-2 text-muted"></i>EDA & Analisis Data</a></li>
                             <li><a class="dropdown-item nav-page-link" href="#" data-page="model"><i
-                                        class="fa-solid fa-brain me-2 text-muted"></i>Eksperimen Model</a></li>
-
+                                        class="fa-solid fa-brain me-2 text-muted"></i>Dashboard Clustering</a></li>
+                            <li><a class="dropdown-item nav-page-link" href="#" data-page="classification"><i
+                                        class="fa-solid fa-bullseye me-2 text-muted"></i>Dashboard Klasifikasi</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -1151,6 +1152,113 @@
             </div>
         </section>
 
+        <!-- ================= NEW PAGE: EVALUASI KLASIFIKASI ================= -->
+        <section class="page" id="page-classification" style="background-color: #f8f9fa; min-height: calc(100vh - 86px);">
+            <div class="container-fluid px-4 py-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="fw-bold text-dark">Dashboard Klasifikasi (XGBoost)</h2>
+                        <p class="text-muted mb-0">Evaluasi performa model klasifikasi peringatan dini krisis pangan.</p>
+                    </div>
+                    <div>
+                        <select class="form-select border-0 shadow-sm" id="classFilterCluster" style="width: 250px;">
+                            <option value="all">Semua Klaster (Global)</option>
+                            <option value="0">Klaster 0 (Tropis Basah)</option>
+                            <option value="1">Klaster 1 (Monsunal Kering)</option>
+                            <option value="2">Klaster 2 (Super Basah)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ROW 1: KPI Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
+                            <p class="small text-muted fw-bold mb-1 text-uppercase">Recall (Sensitivitas)</p>
+                            <h3 class="fw-bold text-primary mb-0" id="classKpiRecall">-</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
+                            <p class="small text-muted fw-bold mb-1 text-uppercase">F1-Score Global</p>
+                            <h3 class="fw-bold text-primary mb-0" id="classKpiF1">-</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
+                            <p class="small text-muted fw-bold mb-1 text-uppercase">ROC AUC Score</p>
+                            <h3 class="fw-bold text-primary mb-0" id="classKpiRoc">-</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
+                            <p class="small text-muted fw-bold mb-1 text-uppercase">Optimal Threshold</p>
+                            <h3 class="fw-bold text-primary mb-0" id="classKpiThreshold">-</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 2: Charts -->
+                <div class="row g-4 mb-4 align-items-stretch">
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Grafik Confusion Matrix</h6>
+                            <div style="height: 250px; position: relative;" class="d-flex justify-content-center align-items-center">
+                                <canvas id="classChartConfusion"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Grafik Feature Importance</h6>
+                            <div style="height: 250px; position: relative;" class="d-flex justify-content-center align-items-center">
+                                <canvas id="classChartFeature"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Proporsi Kelas (Aman vs Berisiko)</h6>
+                            <div style="height: 250px; position: relative;" class="d-flex justify-content-center align-items-center">
+                                <canvas id="classChartPie"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 3: Precision-Recall & Table -->
+                <div class="row g-4 align-items-stretch">
+                    <div class="col-lg-7">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Kurva Precision-Recall</h6>
+                            <div style="height: 300px; position: relative;" class="d-flex justify-content-center align-items-center">
+                                <canvas id="classChartPR"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Tabel Komparasi Performa Antar-Klaster</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered align-middle small text-center mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="fw-bold text-muted text-uppercase">Klaster</th>
+                                            <th class="fw-bold text-muted text-uppercase">Precision</th>
+                                            <th class="fw-bold text-muted text-uppercase">Recall</th>
+                                            <th class="fw-bold text-muted text-uppercase">F1-Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="classTableBody">
+                                        <!-- Injected via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
     </main>
 

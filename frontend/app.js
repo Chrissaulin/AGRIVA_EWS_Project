@@ -21,7 +21,7 @@ window.switchPage = function(page) {
     if(navLink) navLink.classList.add('active');
 
     // Handle dropdown active state
-    if(page === 'eda' || page === 'model') {
+    if(page === 'eda' || page === 'model' || page === 'classification') {
         const dropdown = document.getElementById('navbarDropdown');
         if(dropdown) dropdown.classList.add('active');
     }
@@ -33,6 +33,7 @@ window.switchPage = function(page) {
     if (page === 'map' && leafletMap) setTimeout(() => leafletMap.invalidateSize(), 200);
     if (page === 'eda') loadEDA();
     if (page === 'model') loadModelDashboard();
+    if (page === 'classification' && typeof loadClassificationDashboard === 'function') loadClassificationDashboard();
 }
 
 // ===== INIT =====
@@ -613,6 +614,159 @@ function renderForecastChart(fData, variable) {
             }
         }
     });
+}
+
+// ===== CLASSIFICATION DASHBOARD =====
+let classLoaded = false;
+let classCharts = {};
+
+async function loadClassificationDashboard() {
+    if (!classLoaded) {
+        document.getElementById('classFilterCluster').addEventListener('change', loadClassificationData);
+        classLoaded = true;
+    }
+    loadClassificationData();
+}
+
+async function loadClassificationData() {
+    const cluster = document.getElementById('classFilterCluster').value;
+    
+    try {
+        const res = await fetch(`${API}/api/classification/dashboard?cluster=${cluster}`);
+        const d = await res.json();
+        if(d.error) return alert(d.error);
+
+        // Update KPIs
+        document.getElementById('classKpiRecall').textContent = d.kpis.recall;
+        document.getElementById('classKpiF1').textContent = d.kpis.f1;
+        document.getElementById('classKpiRoc').textContent = d.kpis.roc_auc;
+        document.getElementById('classKpiThreshold').textContent = d.kpis.optimal_threshold;
+
+        // Clean up old charts
+        Object.values(classCharts).forEach(c => c.destroy());
+        classCharts = {};
+
+        // 1. Confusion Matrix (Bubble style approximation for Heatmap)
+        const cm = d.confusion_matrix;
+        const maxVal = Math.max(...cm.flat());
+        classCharts.confusion = new Chart(document.getElementById('classChartConfusion'), {
+            type: 'bubble',
+            data: {
+                datasets: [
+                    {
+                        label: 'Confusion Matrix',
+                        data: [
+                            {x: 0, y: 1, r: (cm[1][0]/maxVal)*30 + 5, value: cm[1][0], title: 'False Negative'},
+                            {x: 1, y: 1, r: (cm[1][1]/maxVal)*30 + 5, value: cm[1][1], title: 'True Positive'},
+                            {x: 0, y: 0, r: (cm[0][0]/maxVal)*30 + 5, value: cm[0][0], title: 'True Negative'},
+                            {x: 1, y: 0, r: (cm[0][1]/maxVal)*30 + 5, value: cm[0][1], title: 'False Positive'}
+                        ],
+                        backgroundColor: (ctx) => {
+                            const val = ctx.raw?.value || 0;
+                            const t = ctx.raw?.title || '';
+                            if (t === 'True Positive' || t === 'True Negative') return `rgba(22, 163, 74, ${Math.max(0.2, val/maxVal)})`;
+                            return `rgba(239, 68, 68, ${Math.max(0.2, val/maxVal)})`;
+                        }
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.raw.title}: ${ctx.raw.value}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        min: -0.5, max: 1.5,
+                        ticks: { callback: (v) => v === 0 ? 'Pred: Aman' : (v === 1 ? 'Pred: Risiko' : '') }
+                    },
+                    y: {
+                        min: -0.5, max: 1.5,
+                        ticks: { callback: (v) => v === 0 ? 'Actual: Aman' : (v === 1 ? 'Actual: Risiko' : '') }
+                    }
+                }
+            }
+        });
+
+        // 2. Feature Importance (Horizontal Bar)
+        classCharts.feature = new Chart(document.getElementById('classChartFeature'), {
+            type: 'bar',
+            data: {
+                labels: d.feature_importance.labels.map(l => l.length > 20 ? l.substring(0, 20)+'...' : l),
+                datasets: [{
+                    label: 'Importance',
+                    data: d.feature_importance.data,
+                    backgroundColor: '#3b5d50',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: { x: { display: false }, y: { ticks: { font: { size: 10 } } } }
+            }
+        });
+
+        // 3. Pie Chart (Aman vs Berisiko)
+        classCharts.pie = new Chart(document.getElementById('classChartPie'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Aman', 'Berisiko'],
+                datasets: [{
+                    data: d.class_proportion,
+                    backgroundColor: ['#16a34a', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '65%',
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+        // 4. Precision-Recall Curve
+        classCharts.pr = new Chart(document.getElementById('classChartPR'), {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'PR Curve',
+                    data: d.pr_curve,
+                    borderColor: '#f9bf29',
+                    backgroundColor: 'rgba(249, 191, 41, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { title: { display: true, text: 'Recall' }, min: 0, max: 1 },
+                    y: { title: { display: true, text: 'Precision' }, min: 0, max: 1 }
+                }
+            }
+        });
+
+        // 5. Cluster Comparison Table
+        const tbody = document.getElementById('classTableBody');
+        tbody.innerHTML = d.table.map(r => `
+            <tr>
+                <td class="fw-bold">${r.cluster}</td>
+                <td>${r.precision}</td>
+                <td>${r.recall}</td>
+                <td>${r.f1}</td>
+            </tr>
+        `).join('');
+
+    } catch (err) {
+        console.error("Classification dashboard error: ", err);
+    }
 }
 
 let lastForecastData = [];
