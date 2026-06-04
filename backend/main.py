@@ -162,13 +162,14 @@ def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All", 
     }
 
     # Data Table Summary
+    table_features = radar_features + ['FPAR - zscore']
     if province == "All":
-        table_df = df.groupby('region_name')[radar_features + ['target_biner']].mean().reset_index()
+        table_df = df.groupby('region_name')[table_features + ['target_biner']].mean().reset_index()
         table_df['target_biner'] = df.groupby('region_name')['target_biner'].sum().reset_index()['target_biner']
         table_df = table_df.head(15).round(2)
         table_data = table_df.rename(columns={'region_name': 'Kategori'}).to_dict(orient='records')
     else:
-        table_df = df.groupby('year')[radar_features + ['target_biner']].mean().reset_index()
+        table_df = df.groupby('year')[table_features + ['target_biner']].mean().reset_index()
         table_df['target_biner'] = df.groupby('year')['target_biner'].sum().reset_index()['target_biner']
         table_df = table_df.head(15).round(2)
         table_data = table_df.rename(columns={'year': 'Kategori'}).to_dict(orient='records')

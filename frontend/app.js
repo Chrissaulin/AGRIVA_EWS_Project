@@ -753,11 +753,14 @@ async function loadEdaDashboard() {
         tbody.innerHTML = d.table_data.map(row => `
             <tr>
                 <td class="fw-bold text-dark">${row.Kategori}</td>
-                <td>${row['Rainfall'] || '-'}</td>
-                <td>${row['Temperature'] || '-'}</td>
-                <td>${row['SPI - 3 months'] || '-'}</td>
-                <td>${row['Water Satisfaction Index (WSI)'] || '-'}</td>
-                <td>${row['Soil Moisture (gapfilled historical time series)'] || '-'}</td>
+                <td>${row['Rainfall'] ?? '-'}</td>
+                <td>${row['Temperature'] ?? '-'}</td>
+                <td>${row['SPI - 3 months'] ?? '-'}</td>
+                <td>${row['Water Satisfaction Index (WSI)'] ?? '-'}</td>
+                <td>${row['Soil Moisture (gapfilled historical time series)'] ?? '-'}</td>
+                <td>${row['Solar Radiation'] ?? '-'}</td>
+                <td>${row['FPAR'] ?? '-'}</td>
+                <td>${row['FPAR - zscore'] ?? '-'}</td>
                 <td class="fw-bold text-danger">${row['target_biner']}</td>
             </tr>
         `).join('');
