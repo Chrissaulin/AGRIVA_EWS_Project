@@ -366,6 +366,37 @@ function setupForecastControls() {
     // Listen to changes on province/variable to auto-update
     document.getElementById('forecastProvince').addEventListener('change', runForecast);
     document.getElementById('forecastVariable').addEventListener('change', runForecast);
+
+    // Export to CSV
+    document.getElementById('btnExportCSV').addEventListener('click', () => {
+        if (!lastForecastData || lastForecastData.length === 0) return alert('Tidak ada data ramalan untuk diekspor.');
+        
+        const headers = ["Dekad_Ke", "Tanggal", "Rainfall", "SPI_3_months", "Temperature", "WSI", "Solar_Radiation", "Soil_Moisture", "FPAR", "FPAR_zscore"];
+        const rows = lastForecastData.map(p => {
+            const d = p.predicted;
+            return [
+                p.step,
+                p.date,
+                d['Rainfall'] || 0,
+                d['SPI - 3 months'] || 0,
+                d['Temperature'] || 0,
+                d['Water Satisfaction Index (WSI)'] || 0,
+                d['Solar Radiation'] || 0,
+                d['Soil Moisture (gapfilled historical time series)'] || 0,
+                d['FPAR'] || 0,
+                d['FPAR - zscore'] || 0
+            ].join(',');
+        });
+        
+        const csvContent = "data:text/csv;charset=utf-8," + headers.join(',') + "\n" + rows.join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `forecast_results_${document.getElementById('forecastProvince').value}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    });
 }
 
 async function runForecast() {
@@ -472,14 +503,17 @@ function renderForecastChart(fData, variable) {
     });
 }
 
+let lastForecastData = [];
+
 function renderForecastTable(predictions) {
+    lastForecastData = predictions;
     const card = document.getElementById('forecastTableCard');
     card.style.display = 'block';
     const tbody = document.getElementById('forecastTableBody');
     tbody.innerHTML = predictions.map(p => {
         const d = p.predicted;
         return `<tr>
-            <td class="fw-bold">Bulan ${p.step}</td>
+            <td class="fw-bold">Dekad ${p.step}</td>
             <td>${p.date || '-'}</td>
             <td>${d['Rainfall']?.toFixed(2) || '-'}</td>
             <td>${d['SPI - 3 months']?.toFixed(3) || '-'}</td>

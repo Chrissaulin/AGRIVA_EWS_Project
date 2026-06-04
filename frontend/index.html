@@ -789,7 +789,7 @@
                                 <span>Horizon Ramalan (Dekad Kedepan)</span>
                                 <span class="text-primary-custom fw-bold" id="stepsValue">0 Dekad</span>
                             </label>
-                            <input type="range" id="forecastSteps" min="0" max="12" value="0"
+                            <input type="range" id="forecastSteps" min="0" max="18" value="0"
                                 class="form-range custom-range">
                         </div>
                         <div class="col-lg-2 col-md-4">
@@ -818,17 +818,22 @@
 
                 <div class="card border-0 shadow-sm rounded-4 p-4 bg-white" id="forecastTableCard"
                     style="display:none;">
-                    <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
-                        <div class="benefit-icon"
-                            style="width: 40px; height: 40px; line-height: 40px; font-size: 16px;"><i
-                                class="fa-solid fa-table"></i></div>
-                        <h5 class="fw-bold mb-0">Detail Hasil Ramalan</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="benefit-icon"
+                                style="width: 40px; height: 40px; line-height: 40px; font-size: 16px;"><i
+                                    class="fa-solid fa-table"></i></div>
+                            <h5 class="fw-bold mb-0">Detail Hasil Ramalan</h5>
+                        </div>
+                        <button class="btn btn-sm btn-outline-success rounded-pill px-3" id="btnExportCSV">
+                            <i class="fa-solid fa-file-csv me-1"></i> Export to CSV
+                        </button>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="small text-muted text-uppercase fw-bold">Bulan Ke-</th>
+                                    <th class="small text-muted text-uppercase fw-bold">Dekad Ke-</th>
                                     <th class="small text-muted text-uppercase fw-bold">Tanggal (Est)</th>
                                     <th class="small text-muted text-uppercase fw-bold">Rainfall</th>
                                     <th class="small text-muted text-uppercase fw-bold">SPI-3M</th>
