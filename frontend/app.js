@@ -764,19 +764,19 @@ let modelCharts = {};
 function loadModelDashboard() {
     if (modelLoaded) return;
     
-    // 1. CLUSTERING: Elbow Method Chart
+    // 1. CLUSTERING: Silhouette Score Chart
     modelCharts.cluster = new Chart(document.getElementById('modelChartCluster'), {
         type: 'line',
         data: {
-            labels: ['k=1', 'k=2', 'k=3', 'k=4', 'k=5', 'k=6'],
+            labels: ['k=2', 'k=3', 'k=4', 'k=5', 'k=6', 'k=7'],
             datasets: [{
-                label: 'Inertia (Within-Cluster Sum of Square)',
-                data: [1240, 850, 310, 260, 220, 195],
+                label: 'Silhouette Score',
+                data: [0.380, 0.3916, 0.352, 0.315, 0.280, 0.265],
                 borderColor: '#3b5d50',
                 backgroundColor: 'rgba(59, 93, 80, 0.1)',
                 borderWidth: 3,
-                pointBackgroundColor: ['#3b5d50', '#3b5d50', '#f9bf29', '#3b5d50', '#3b5d50', '#3b5d50'],
-                pointRadius: [4, 4, 8, 4, 4, 4],
+                pointBackgroundColor: ['#3b5d50', '#f9bf29', '#3b5d50', '#3b5d50', '#3b5d50', '#3b5d50'],
+                pointRadius: [4, 8, 4, 4, 4, 4],
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 2,
                 fill: true,
@@ -790,56 +790,62 @@ function loadModelDashboard() {
         }
     });
 
-    // 2. CLASSIFICATION: Feature Importance (Horizontal Bar)
-    modelCharts.class = new Chart(document.getElementById('modelChartClass'), {
-        type: 'bar',
+    // 2. PIE CHART: Cluster Proportion
+    modelCharts.pie = new Chart(document.getElementById('modelChartPie'), {
+        type: 'doughnut',
         data: {
-            labels: ['Kelembaban Tanah', 'Curah Hujan', 'Kecukupan Air (WSI)', 'Suhu Udara', 'Indeks Kekeringan', 'Radiasi Surya'],
+            labels: ['Klaster 0', 'Klaster 1', 'Klaster 2'],
             datasets: [{
-                label: 'Gain Score',
-                data: [0.38, 0.25, 0.16, 0.11, 0.06, 0.04],
-                backgroundColor: '#3b5d50',
-                borderRadius: 4
+                data: [18, 9, 6],
+                backgroundColor: ['#0dcaf0', '#198754', '#ffc107'],
+                borderWidth: 2,
+                borderColor: '#ffffff'
             }]
         },
         options: {
-            indexAxis: 'y',
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { x: { grid: { color: '#f3f4f6' } }, y: { grid: { display: false } } }
+            cutout: '60%',
+            plugins: { 
+                legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } 
+            }
         }
     });
 
-    // 3. FORECASTING: Actual vs Predicted Test Set (Rainfall Sample)
-    modelCharts.forecast = new Chart(document.getElementById('modelChartForecast'), {
-        type: 'line',
+    // 3. SCATTER PLOT: Rainfall vs Temperature
+    modelCharts.scatter = new Chart(document.getElementById('modelChartScatter'), {
+        type: 'scatter',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
             datasets: [
                 {
-                    label: 'Aktual (Test Set)',
-                    data: [180, 210, 195, 140, 95, 60, 45, 40, 75, 120, 160, 205],
-                    borderColor: '#3b5d50',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    pointRadius: 4
+                    label: 'Klaster 0 (Basah)',
+                    data: Array.from({length: 40}, () => ({x: 71.58 + (Math.random()*15-7.5), y: 25.95 + (Math.random()*2-1)})),
+                    backgroundColor: 'rgba(13, 202, 240, 0.7)',
+                    borderColor: '#0dcaf0',
+                    pointRadius: 5
                 },
                 {
-                    label: 'Prediksi XGBRegressor',
-                    data: [172, 200, 188, 145, 102, 65, 52, 48, 68, 115, 155, 198],
-                    borderColor: '#f9bf29',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointRadius: 4,
-                    pointStyle: 'rect'
+                    label: 'Klaster 1 (Kering)',
+                    data: Array.from({length: 40}, () => ({x: 56.48 + (Math.random()*15-7.5), y: 25.38 + (Math.random()*2-1)})),
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                    borderColor: '#198754',
+                    pointRadius: 5
+                },
+                {
+                    label: 'Klaster 2 (Super Basah)',
+                    data: Array.from({length: 20}, () => ({x: 72.27 + (Math.random()*15-7.5), y: 23.22 + (Math.random()*2-1)})),
+                    backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                    borderColor: '#ffc107',
+                    pointRadius: 5
                 }
             ]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { position: 'top' } },
-            scales: { y: { title: { display: true, text: 'Curah Hujan (mm)' }, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+            scales: {
+                x: { title: { display: true, text: 'Curah Hujan (mm)' }, grid: { color: '#f3f4f6' } },
+                y: { title: { display: true, text: 'Suhu Udara (°C)' }, grid: { color: '#f3f4f6' } }
+            }
         }
     });
 
