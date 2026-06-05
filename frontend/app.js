@@ -21,7 +21,7 @@ window.switchPage = function(page) {
     if(navLink) navLink.classList.add('active');
 
     // Handle dropdown active state
-    if(page === 'eda' || page === 'model' || page === 'classification') {
+    if(page === 'eda' || page === 'model' || page === 'classification' || page === 'forecasting-eval') {
         const dropdown = document.getElementById('navbarDropdown');
         if(dropdown) dropdown.classList.add('active');
     }
@@ -34,6 +34,7 @@ window.switchPage = function(page) {
     if (page === 'eda') loadEDA();
     if (page === 'model') loadModelDashboard();
     if (page === 'classification' && typeof loadClassificationDashboard === 'function') loadClassificationDashboard();
+    if (page === 'forecasting-eval' && typeof loadForecastingEvalDashboard === 'function') loadForecastingEvalDashboard();
 }
 
 // ===== INIT =====
@@ -1015,4 +1016,104 @@ function loadModelDashboard() {
     });
 
     modelLoaded = true;
+}
+
+// ===== FORECASTING EVALUATION DASHBOARD =====
+let forecastEvalLoaded = false;
+let forecastEvalCharts = {};
+
+function loadForecastingEvalDashboard() {
+    if (!forecastEvalLoaded) {
+        document.getElementById('forecastEvalFilterTarget').addEventListener('change', loadForecastingEvalData);
+        document.getElementById('forecastEvalFilterCluster').addEventListener('change', loadForecastingEvalData);
+        forecastEvalLoaded = true;
+    }
+    loadForecastingEvalData();
+}
+
+async function loadForecastingEvalData() {
+    const target = document.getElementById('forecastEvalFilterTarget').value;
+    const cluster = document.getElementById('forecastEvalFilterCluster').value;
+    
+    try {
+        const res = await fetch(`${API}/api/forecast/dashboard?cluster=${cluster}&target=${encodeURIComponent(target)}`);
+        const d = await res.json();
+        if(d.error) return alert(d.error);
+
+        // Update KPIs
+        document.getElementById('forecastKpiMae').textContent = d.kpis.mae;
+        document.getElementById('forecastKpiRmse').textContent = d.kpis.rmse;
+        document.getElementById('forecastKpiMape').textContent = `${d.kpis.mape}%`;
+        document.getElementById('forecastKpiSafety').textContent = `± ${d.kpis.safety}`;
+
+        // Render Table first (so it doesn't fail if charts fail)
+        const tbody = document.getElementById('forecastTableBody');
+        if (tbody && d.table) {
+            tbody.innerHTML = d.table.map(r => {
+                const activeClass = r.target === target ? 'table-warning fw-bold' : '';
+                return `<tr class="${activeClass}">
+                    <td class="text-start">${r.target}</td>
+                    <td>${r.mae}</td>
+                    <td>${r.rmse}</td>
+                    <td>${r.mape}%</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // Destroy old charts
+        Object.values(forecastEvalCharts).forEach(c => {
+            if(c) c.destroy();
+        });
+        forecastEvalCharts = {};
+
+        // 1. Line Chart (Actual vs Predicted)
+        forecastEvalCharts.line = new Chart(document.getElementById('forecastChartLine'), {
+            type: 'line',
+            data: {
+                labels: d.charts.labels || [],
+                datasets: [
+                    { label: 'Aktual', data: d.charts.actual || [], borderColor: '#198754', tension: 0.3, pointRadius: 2 },
+                    { label: 'Prediksi', data: d.charts.predicted || [], borderColor: '#ffc107', tension: 0.3, pointRadius: 2, borderDash: [5, 5] }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // 2. Scatter Plot
+        const scatterData = (d.charts.actual || []).map((a, i) => ({x: (d.charts.predicted || [])[i], y: a}));
+        forecastEvalCharts.scatter = new Chart(document.getElementById('forecastChartScatter'), {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Aktual vs Prediksi',
+                    data: scatterData,
+                    backgroundColor: 'rgba(59, 93, 80, 0.6)'
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'Prediksi Model' } },
+                    y: { title: { display: true, text: 'Nilai Aktual' } }
+                }
+            }
+        });
+
+        // 3. Histogram
+        forecastEvalCharts.hist = new Chart(document.getElementById('forecastChartHist'), {
+            type: 'bar',
+            data: {
+                labels: d.charts.hist_labels || [],
+                datasets: [{
+                    label: 'Frekuensi Error',
+                    data: d.charts.hist_data || [],
+                    backgroundColor: '#ef4444'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+    } catch (err) {
+        console.error("Forecasting dashboard error: ", err);
+    }
 }

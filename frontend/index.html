@@ -52,6 +52,8 @@
                                         class="fa-solid fa-brain me-2 text-muted"></i>Dashboard Clustering</a></li>
                             <li><a class="dropdown-item nav-page-link" href="#" data-page="classification"><i
                                         class="fa-solid fa-bullseye me-2 text-muted"></i>Dashboard Klasifikasi</a></li>
+                            <li><a class="dropdown-item nav-page-link" href="#" data-page="forecasting-eval"><i
+                                        class="fa-solid fa-chart-line me-2 text-muted"></i>Dashboard Forecasting</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -1250,6 +1252,115 @@
                                         </tr>
                                     </thead>
                                     <tbody id="classTableBody">
+                                        <!-- Injected via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= NEW PAGE: EVALUASI FORECASTING ================= -->
+        <section class="page" id="page-forecasting-eval" style="background-color: #f8f9fa; min-height: calc(100vh - 86px);">
+            <div class="container-fluid px-4 py-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="fw-bold text-dark">Dashboard Evaluasi Forecasting (XGBoost Regressor)</h2>
+                        <p class="text-muted mb-0">Evaluasi performa regresi peramalan agroklimatologi deret waktu.</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <select class="form-select border-0 shadow-sm" id="forecastEvalFilterTarget" style="width: 250px;">
+                            <option value="Rainfall">Rainfall (Curah Hujan)</option>
+                            <option value="Temperature">Temperature (Suhu)</option>
+                            <option value="SPI - 3 months">SPI - 3 months</option>
+                            <option value="Water Satisfaction Index (WSI)">WSI</option>
+                            <option value="Solar Radiation">Solar Radiation</option>
+                            <option value="Soil Moisture (gapfilled historical time series)">Soil Moisture</option>
+                            <option value="FPAR">FPAR</option>
+                            <option value="FPAR - zscore">FPAR z-score</option>
+                        </select>
+                        <select class="form-select border-0 shadow-sm" id="forecastEvalFilterCluster" style="width: 200px;">
+                            <option value="0">Klaster 0 (Tropis Basah)</option>
+                            <option value="1">Klaster 1 (Monsunal Kering)</option>
+                            <option value="2">Klaster 2 (Super Basah)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ROW 1: KPI Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
+                            <p class="small text-muted fw-bold mb-1 text-uppercase">MAE</p>
+                            <h3 class="fw-bold text-primary mb-0" id="forecastKpiMae">-</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
+                            <p class="small text-muted fw-bold mb-1 text-uppercase">RMSE</p>
+                            <h3 class="fw-bold text-primary mb-0" id="forecastKpiRmse">-</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
+                            <p class="small text-muted fw-bold mb-1 text-uppercase">MAPE</p>
+                            <h3 class="fw-bold text-primary mb-0" id="forecastKpiMape">-</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
+                            <p class="small text-muted fw-bold mb-1 text-uppercase">Safety Margin</p>
+                            <h3 class="fw-bold text-primary mb-0" id="forecastKpiSafety">-</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 2: Charts (Line & Scatter) -->
+                <div class="row g-4 mb-4 align-items-stretch">
+                    <div class="col-lg-7">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Grafik Aktual vs Prediksi (Time-Series)</h6>
+                            <div style="height: 300px; position: relative;" class="d-flex justify-content-center align-items-center">
+                                <canvas id="forecastChartLine"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Distribusi Aktual vs Prediksi (Scatter)</h6>
+                            <div style="height: 300px; position: relative;" class="d-flex justify-content-center align-items-center">
+                                <canvas id="forecastChartScatter"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 3: Charts (Histogram & Table) -->
+                <div class="row g-4 align-items-stretch">
+                    <div class="col-lg-7">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Histogram Residu (Distribusi Error)</h6>
+                            <div style="height: 300px; position: relative;" class="d-flex justify-content-center align-items-center">
+                                <canvas id="forecastChartHist"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Rekapitulasi Performa Target Evaluasi</h6>
+                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                <table class="table table-sm table-bordered align-middle small text-center mb-0">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th class="fw-bold text-muted text-uppercase">Target</th>
+                                            <th class="fw-bold text-muted text-uppercase">MAE</th>
+                                            <th class="fw-bold text-muted text-uppercase">RMSE</th>
+                                            <th class="fw-bold text-muted text-uppercase">MAPE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="forecastTableBody">
                                         <!-- Injected via JS -->
                                     </tbody>
                                 </table>
