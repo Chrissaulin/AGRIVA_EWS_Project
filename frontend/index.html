@@ -152,72 +152,83 @@
             </div>
 
             <!-- Data Pipeline Flow Section -->
-            <div class="flow-section py-5 bg-white border-top border-bottom">
+            <div class="flow-section py-5 border-top border-bottom" style="background-color: #3b5d50;">
                 <div class="container py-5">
-                    <div class="text-center mb-5 pb-3">
-                        <h2 class="section-title fw-bold">Alur Kerja Sistem (Data Pipeline)</h2>
-                        <p class="text-muted">Perjalanan data dari observasi iklim mentah hingga menjadi wawasan
-                            peringatan dini interaktif.</p>
+                    <div class="text-start mb-5 pb-3">
+                        <h2 class="section-title fw-bold text-white">Alur Kerja Sistem (Data Pipeline)</h2>
+                        <p class="text-white opacity-75">Perjalanan data dari observasi iklim mentah hingga menjadi wawasan peringatan dini interaktif.</p>
                     </div>
 
-                    <div class="row g-4 position-relative">
-                        <!-- Connecting Line (hidden on small screens) -->
-                        <div class="position-absolute top-50 start-0 w-100 translate-middle-y d-none d-lg-block"
-                            style="height: 4px; background-color: #e5e7eb; z-index: 1;"></div>
-
-                        <div class="col-lg-3 col-md-6 position-relative" style="z-index: 2;">
-                            <div class="card border-0 h-100 bg-transparent text-center">
-                                <div class="bg-primary-custom text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4 shadow"
-                                    style="width: 80px; height: 80px; border: 6px solid white; transition: transform 0.3s;"
-                                    onmouseover="this.style.transform='scale(1.1)'"
-                                    onmouseout="this.style.transform='scale(1)'">
-                                    <i class="fa-solid fa-database fa-2x"></i>
+                    <div class="d-flex flex-column gap-4">
+                        <!-- Step 1 -->
+                        <div class="row align-items-center">
+                            <div class="col-md-5 d-flex align-items-center gap-4">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm text-dark flex-shrink-0 fw-bold" 
+                                    style="width: 70px; height: 70px; font-size: 1.5rem; background-color: #f9bf29;">
+                                    1
                                 </div>
-                                <h5 class="fw-bold">1. Pra-Pemrosesan Data</h5>
-                                <p class="text-muted small">Agregasi data satelit & iklim historis ke format dekad (10
-                                    harian) serta penanganan nilai kosong untuk siap dimodelkan.</p>
+                                <h4 class="fw-bold mb-0 text-white">Pra-Pemrosesan Data</h4>
+                            </div>
+                            <div class="col-md-7 mt-3 mt-md-0">
+                                <div class="card border-0 rounded-4 p-4 shadow-sm h-100 d-flex align-items-center" style="background-color: #f9bf29;">
+                                    <p class="mb-0 small fw-medium" style="color: #2f2f2f;">
+                                        Agregasi data satelit & iklim historis ke format dekad (10 harian) serta penanganan nilai kosong untuk siap dimodelkan.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="col-lg-3 col-md-6 position-relative" style="z-index: 2;">
-                            <div class="card border-0 h-100 bg-transparent text-center">
-                                <div class="bg-primary-custom text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4 shadow"
-                                    style="width: 80px; height: 80px; border: 6px solid white; transition: transform 0.3s;"
-                                    onmouseover="this.style.transform='scale(1.1)'"
-                                    onmouseout="this.style.transform='scale(1)'">
-                                    <i class="fa-solid fa-object-group fa-2x"></i>
+                        <!-- Step 2 -->
+                        <div class="row align-items-center">
+                            <div class="col-md-5 d-flex align-items-center gap-4" style="padding-left: 10%;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm text-dark flex-shrink-0 fw-bold" 
+                                    style="width: 70px; height: 70px; font-size: 1.5rem; background-color: #f9bf29;">
+                                    2
                                 </div>
-                                <h5 class="fw-bold">2. Clustering Wilayah</h5>
-                                <p class="text-muted small">Algoritma K-Means membagi 33 provinsi menjadi kluster tipe
-                                    iklim (Basah, Normal, Kering) agar akurasi pemodelan spesifik.</p>
+                                <h4 class="fw-bold mb-0 text-white">Clustering Wilayah</h4>
+                            </div>
+                            <div class="col-md-7 mt-3 mt-md-0">
+                                <div class="card border-0 rounded-4 p-4 shadow-sm h-100 d-flex align-items-center" style="background-color: #f9bf29;">
+                                    <p class="mb-0 small fw-medium" style="color: #2f2f2f;">
+                                        Algoritma K-Means membagi 33 provinsi menjadi kluster tipe iklim (Basah, Normal, Kering) agar akurasi pemodelan spesifik.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="col-lg-3 col-md-6 position-relative" style="z-index: 2;">
-                            <div class="card border-0 h-100 bg-transparent text-center">
-                                <div class="bg-primary-custom text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4 shadow"
-                                    style="width: 80px; height: 80px; border: 6px solid white; transition: transform 0.3s;"
-                                    onmouseover="this.style.transform='scale(1.1)'"
-                                    onmouseout="this.style.transform='scale(1)'">
-                                    <i class="fa-solid fa-brain fa-2x"></i>
+                        <!-- Step 3 -->
+                        <div class="row align-items-center">
+                            <div class="col-md-5 d-flex align-items-center gap-4">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm text-dark flex-shrink-0 fw-bold" 
+                                    style="width: 70px; height: 70px; font-size: 1.5rem; background-color: #f9bf29;">
+                                    3
                                 </div>
-                                <h5 class="fw-bold">3. Pemodelan AI (XGBoost)</h5>
-                                <p class="text-muted small">Model AI Classification mendeteksi sinyal EWS, sementara
-                                    model Auto-Regressive Forecasting meramalkan iklim di masa mendatang.</p>
+                                <h4 class="fw-bold mb-0 text-white">Pemodelan AI</h4>
+                            </div>
+                            <div class="col-md-7 mt-3 mt-md-0">
+                                <div class="card border-0 rounded-4 p-4 shadow-sm h-100 d-flex align-items-center" style="background-color: #f9bf29;">
+                                    <p class="mb-0 small fw-medium" style="color: #2f2f2f;">
+                                        Model AI Classification mendeteksi sinyal EWS, sementara model Auto-Regressive Forecasting meramalkan iklim di masa mendatang.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="col-lg-3 col-md-6 position-relative" style="z-index: 2;">
-                            <div class="card border-0 h-100 bg-transparent text-center">
-                                <div class="bg-primary-custom text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4 shadow"
-                                    style="width: 80px; height: 80px; border: 6px solid white; transition: transform 0.3s;"
-                                    onmouseover="this.style.transform='scale(1.1)'"
-                                    onmouseout="this.style.transform='scale(1)'">
-                                    <i class="fa-solid fa-desktop fa-2x"></i>
+                        <!-- Step 4 -->
+                        <div class="row align-items-center">
+                            <div class="col-md-5 d-flex align-items-center gap-4" style="padding-left: 10%;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm text-dark flex-shrink-0 fw-bold" 
+                                    style="width: 70px; height: 70px; font-size: 1.5rem; background-color: #f9bf29;">
+                                    4
                                 </div>
-                                <h5 class="fw-bold">4. Visualisasi Dasbor</h5>
-                                <p class="text-muted small">Output model AI disajikan secara real-time pada dasbor web
-                                    melalui peta interaktif, grafik, dan peringatan bahaya yang intuitif.</p>
+                                <h4 class="fw-bold mb-0 text-white">Visualisasi Dasbor</h4>
+                            </div>
+                            <div class="col-md-7 mt-3 mt-md-0">
+                                <div class="card border-0 rounded-4 p-4 shadow-sm h-100 d-flex align-items-center" style="background-color: #f9bf29;">
+                                    <p class="mb-0 small fw-medium" style="color: #2f2f2f;">
+                                        Output model AI disajikan secara real-time pada dasbor web melalui peta interaktif, grafik, dan peringatan bahaya yang intuitif.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
