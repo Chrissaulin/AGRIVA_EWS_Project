@@ -710,7 +710,7 @@ async function loadClassificationData() {
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { title: { display: true, text: 'Recall' }, min: 0, max: 1 },
+                    x: { type: 'linear', title: { display: true, text: 'Recall' }, min: 0, max: 1 },
                     y: { title: { display: true, text: 'Precision' }, min: 0, max: 1 }
                 }
             }
