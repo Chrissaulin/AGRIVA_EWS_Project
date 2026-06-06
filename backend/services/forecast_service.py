@@ -7,11 +7,12 @@ from __future__ import annotations
 import pandas as pd
 from sqlalchemy.orm import Session
 
-import core.config as config
-import models
-from services.feature_engineering import get_province_dataframe_with_features
-from services.ews_service import resolve_pipeline
-from shared import forecast_model, ews_pipeline
+from repositories.forecast_repo import (
+    ForecastBatchRepository,
+    ForecastFeatureRepository,
+    EWSForecastResultRepository,
+)
+from repositories.province_repo import ProvinceRepository
 
 
 def execute_batch_forecast(batch_id: int) -> None:

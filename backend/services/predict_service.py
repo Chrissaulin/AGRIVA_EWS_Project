@@ -10,6 +10,8 @@ import pandas as pd
 
 import core.config as config
 import models
+from repositories.province_repo import ProvinceRepository
+from repositories.simulation_repo import SimulationSessionRepository
 from services.ews_service import predict_ews
 from shared import get_province_dataframe_with_features
 from sqlalchemy.orm import Session
@@ -66,8 +68,10 @@ def predict_ews_endpoint(request, db: Session) -> dict[str, Any]:
     ews_result = predict_ews(cluster_id, features, threshold=threshold, pipeline_override=pipeline)
 
     try:
-        prov_obj = db.query(models.Province).filter(models.Province.name == request.province).first()
-        session_record = models.SimulationSession(
+        repo = ProvinceRepository(db)
+        prov_obj = repo.get_by_name(request.province)
+        session_repo = SimulationSessionRepository(db)
+        session_record = session_repo.create(
             source_filename="manual_form",
             province_id=prov_obj.id if prov_obj else None,
             cluster_used=cluster_id,
