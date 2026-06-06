@@ -1,11 +1,18 @@
-# Saring file sampah Jupyter
-.ipynb_checkpoints/
-*/.ipynb_checkpoints/*
+# 1. Blokir sisa model lama dan file biner berserakan
+models_output/
+*.joblib
+xgb_*.pkl
+pipeline_*.pkl
 
-# Saring cache Python
-__pycache__/
-*.pyc
-
-# Mengabaikan log eksperimen MLflow
+# 2. Blokir database dan artifak MLflow
 mlruns/
+mlartifacts/
 *.db
+
+# 3. Blokir tabel output sementara
+Tabel_Bukti_Sidang*.csv
+
+# 4. Blokir folder environment Python dan cache Jupyter
+.venv/
+__pycache__/
+.ipynb_checkpoints/

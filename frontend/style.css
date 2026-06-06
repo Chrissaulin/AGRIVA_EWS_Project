@@ -31,11 +31,21 @@ h1, h2, h3, h4, h5, h6 {
     transition: all 0.3s ease;
 }
 
+.custom-navbar.scrolled {
+    padding: 0.4rem 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
 .custom-navbar .navbar-brand {
     color: var(--text-on-green) !important;
     font-size: 28px;
     font-weight: 700;
     letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.custom-navbar.scrolled .navbar-brand {
+    font-size: 20px;
 }
 
 .custom-navbar .navbar-brand span {
@@ -47,8 +57,12 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 500;
     margin-left: 20px;
     position: relative;
-    transition: .3s all ease;
+    transition: all 0.3s ease;
     font-size: 15px;
+}
+
+.custom-navbar.scrolled .nav-link {
+    font-size: 13px;
 }
 
 .custom-navbar .nav-link:hover,
@@ -180,6 +194,13 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 50%;
     bottom: 0px;
     right: -2px;
+}
+.transition-hover {
+    transition: .3s all ease;
+}
+.transition-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
 }
 
 /* Team Section */
