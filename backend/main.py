@@ -143,8 +143,8 @@ def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All", 
         "wsi": [float(ts_data[ts_data['month_extracted'] == m]['Water Satisfaction Index (WSI)'].mean()) if m in ts_data['month_extracted'].values else 0 for m in range(1, 13)]
     }
     
-    # Radar Chart: 7 Indicators (Scaled by their max to fit 0-100 radar)
-    radar_features = ['Rainfall', 'SPI - 3 months', 'Temperature', 'Water Satisfaction Index (WSI)', 'Solar Radiation', 'Soil Moisture (gapfilled historical time series)', 'FPAR']
+    # Radar Chart: 8 Indicators (Scaled by their max to fit 0-100 radar)
+    radar_features = ['Rainfall', 'SPI - 3 months', 'Temperature', 'Water Satisfaction Index (WSI)', 'Solar Radiation', 'Soil Moisture (gapfilled historical time series)', 'FPAR', 'FPAR - zscore']
     radar_data = []
     for f in radar_features:
         f_max = df_master[f].max()
@@ -162,7 +162,7 @@ def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All", 
     }
 
     # Data Table Summary
-    table_features = radar_features + ['FPAR - zscore']
+    table_features = radar_features
     if province == "All":
         table_df = df.groupby('region_name')[table_features + ['target_biner']].mean().reset_index()
         table_df['target_biner'] = df.groupby('region_name')['target_biner'].sum().reset_index()['target_biner']
@@ -188,7 +188,7 @@ def eda_dashboard(province: Optional[str] = "All", year: Optional[str] = "All", 
         "feature_dist": feature_dist,
         "time_series": time_series,
         "radar": {
-            "labels": ["Curah Hujan", "Indeks Kekeringan (SPI)", "Suhu Udara", "Kecukupan Air (WSI)", "Radiasi Matahari", "Kelembaban Tanah", "Pertumbuhan Vegetasi (FPAR)"],
+            "labels": ["Curah Hujan", "Indeks Kekeringan (SPI)", "Suhu Udara", "Kecukupan Air (WSI)", "Radiasi Matahari", "Kelembaban Tanah", "Pertumbuhan Vegetasi (FPAR)", "FPAR Z-Score"],
             "data": radar_data
         },
         "scatter": scatter_data,
