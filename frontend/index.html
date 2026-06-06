@@ -705,14 +705,30 @@
                                             data-bs-parent="#indicatorAccordion">
                                             <div class="accordion-body small text-muted">
                                                 <ul class="mb-0 ps-3">
-                                                    <li><strong class="text-dark">Curah Hujan (Rainfall):</strong> Jumlah curah hujan (dalam mm). Berpengaruh langsung pada ketersediaan air tanah.</li>
-                                                    <li><strong class="text-dark">SPI 3 Bulan:</strong> <i>Standardized Precipitation Index</i>. Indeks anomali curah hujan. Nilai negatif menandakan periode kekeringan.</li>
-                                                    <li><strong class="text-dark">Suhu Rata-rata:</strong> Suhu udara (dalam °C). Suhu ekstrem bisa memicu <i>heat stress</i> pada tanaman pangan.</li>
-                                                    <li><strong class="text-dark">WSI:</strong> <i>Water Satisfaction Index</i>. Semakin tinggi persentase, semakin baik kebutuhan air tanaman terpenuhi.</li>
-                                                    <li><strong class="text-dark">Radiasi Matahari:</strong> Energi matahari yang mencapai permukaan (J/m²). Penting untuk laju evaporasi dan fotosintesis.</li>
-                                                    <li><strong class="text-dark">Kelembaban Tanah:</strong> Kandungan air aktual di dalam lapisan tanah (m³/m³). Krusial untuk penyerapan akar.</li>
-                                                    <li><strong class="text-dark">FPAR Vegetasi:</strong> <i>Fraction of Photosynthetically Active Radiation</i>. Mengukur aktivitas fotosintesis (kesehatan tanaman).</li>
-                                                    <li><strong class="text-dark">FPAR Z-Score:</strong> Indikator anomali kesehatan vegetasi. Nilai negatif berarti tanaman sedang dalam kondisi lebih buruk dari normalnya.</li>
+                                                    <li><strong class="text-dark">Curah Hujan (Rainfall):</strong>
+                                                        Jumlah curah hujan (dalam mm). Berpengaruh langsung pada
+                                                        ketersediaan air tanah.</li>
+                                                    <li><strong class="text-dark">SPI 3 Bulan:</strong> <i>Standardized
+                                                            Precipitation Index</i>. Indeks anomali curah hujan. Nilai
+                                                        negatif menandakan periode kekeringan.</li>
+                                                    <li><strong class="text-dark">Suhu Rata-rata:</strong> Suhu udara
+                                                        (dalam °C). Suhu ekstrem bisa memicu <i>heat stress</i> pada
+                                                        tanaman pangan.</li>
+                                                    <li><strong class="text-dark">WSI:</strong> <i>Water Satisfaction
+                                                            Index</i>. Semakin tinggi persentase, semakin baik kebutuhan
+                                                        air tanaman terpenuhi.</li>
+                                                    <li><strong class="text-dark">Radiasi Matahari:</strong> Energi
+                                                        matahari yang mencapai permukaan (J/m²). Penting untuk laju
+                                                        evaporasi dan fotosintesis.</li>
+                                                    <li><strong class="text-dark">Kelembaban Tanah:</strong> Kandungan
+                                                        air aktual di dalam lapisan tanah (m³/m³). Krusial untuk
+                                                        penyerapan akar.</li>
+                                                    <li><strong class="text-dark">FPAR Vegetasi:</strong> <i>Fraction of
+                                                            Photosynthetically Active Radiation</i>. Mengukur aktivitas
+                                                        fotosintesis (kesehatan tanaman).</li>
+                                                    <li><strong class="text-dark">FPAR Z-Score:</strong> Indikator
+                                                        anomali kesehatan vegetasi. Nilai negatif berarti tanaman sedang
+                                                        dalam kondisi lebih buruk dari normalnya.</li>
                                                 </ul>
                                             </div>
                                         </div>
@@ -779,9 +795,9 @@
             <!-- ... (Keep forecasting page as is, it's already well designed) ... -->
             <div class="container-fluid px-4 py-5">
                 <div class="mb-4">
-                    <h2 class="fw-bold text-dark">Tren Historis & Peramalan AI</h2>
-                    <p class="text-muted mb-0">Visualisasi historis dan peramalan XGBoost Auto-Regressive (Per-Dekad)
-                        untuk kondisi iklim di masa mendatang.</p>
+                    <h2 class="fw-bold text-dark">Tren Historis & Peramalan</h2>
+                    <p class="text-muted mb-0">Visualisasi historis dan peramalan (Per-Dekad) untuk kondisi iklim di
+                        masa mendatang.</p>
                 </div>
 
                 <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
@@ -814,7 +830,7 @@
                         </div>
                         <div class="col-lg-2 col-md-4">
                             <button class="btn btn-dark-custom w-100 fw-bold py-2 shadow-sm rounded-3" id="btnForecast">
-                                <i class="fa-solid fa-bolt me-2"></i>Jalankan Ramalan
+                                Jalankan Ramalan
                             </button>
                         </div>
                     </div>
@@ -826,7 +842,7 @@
                             <div class="benefit-icon"
                                 style="width: 40px; height: 40px; line-height: 40px; font-size: 16px;"><i
                                     class="fa-solid fa-chart-area"></i></div>
-                            <h5 class="fw-bold mb-0">Proyeksi AI</h5>
+                            <h5 class="fw-bold mb-0">Proyeksi Peramalan</h5>
                         </div>
                         <span class="badge bg-light text-dark border px-4 py-2 rounded-pill shadow-sm"
                             id="forecastChartBadge">Rainfall</span>

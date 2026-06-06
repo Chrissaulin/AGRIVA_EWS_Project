@@ -256,7 +256,7 @@ function setupPredictForm() {
             Soil_Moisture: parseFloat(form.Soil_Moisture.value),
             FPAR: parseFloat(form.FPAR.value),
             FPAR_zscore: parseFloat(form.FPAR_zscore.value),
-            month_extracted: parseInt(form.month_extracted.value),
+            month_extracted: 6, // Fallback default
         };
 
         try {
@@ -558,8 +558,8 @@ function renderForecastChart(fData, variable) {
     const actualDataset = [...histActual, ...Array(predLabels.length).fill(null)];
     const modelDataset = [...histPred, ...Array(predLabels.length).fill(null)];
     
-    // Connect the future forecast line to the last historical point
-    const futureDataset = [...Array(histLabels.length - 1).fill(null), histActual[histActual.length - 1], ...predValues];
+    // Connect the future forecast line to the last model prediction point
+    const futureDataset = [...Array(histLabels.length - 1).fill(null), histPred[histPred.length - 1], ...predValues];
 
     forecastChart = new Chart(ctx, {
         type: 'line',
