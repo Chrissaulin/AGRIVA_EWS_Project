@@ -249,9 +249,16 @@ def get_classification_dashboard(cluster: str = "all"):
                        models[1]['model_xgboost'].feature_importances_ + 
                        models[2]['model_xgboost'].feature_importances_) / 3
                        
-    indices = np.argsort(importances)[::-1][:10]
-    fi_labels = [features[i] for i in indices]
-    fi_data = importances[indices].tolist()
+    indices = np.argsort(importances)[::-1]
+    
+    base_features = {'Rainfall', 'SPI - 3 months', 'Temperature', 'Water Satisfaction Index (WSI)', 'Solar Radiation', 'Soil Moisture (gapfilled historical time series)', 'FPAR', 'FPAR - zscore'}
+    
+    fi_labels = []
+    fi_data = []
+    for i in indices:
+        if features[i] in base_features:
+            fi_labels.append(features[i])
+            fi_data.append(float(importances[i]))
         
     # Dummy Precision-Recall curve
     import math

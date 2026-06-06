@@ -1298,10 +1298,27 @@
                 <div class="row g-4 mb-4 align-items-stretch">
                     <div class="col-lg-4">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h6 class="fw-bold mb-3 border-bottom pb-2">Grafik Confusion Matrix</h6>
-                            <div style="height: 250px; position: relative;"
-                                class="d-flex justify-content-center align-items-center">
-                                <canvas id="classChartConfusion"></canvas>
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Confusion Matrix</h6>
+                            <div class="d-flex flex-column justify-content-center align-items-center h-100 w-100">
+                                <table class="table table-bordered text-center w-100 h-100 m-0" style="table-layout: fixed;">
+                                    <tbody>
+                                        <tr>
+                                            <td class="border-0 align-middle"></td>
+                                            <td class="bg-light fw-bold align-middle small text-success">Prediksi<br>Aman</td>
+                                            <td class="bg-light fw-bold align-middle small text-danger">Prediksi<br>Berisiko</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="bg-light fw-bold align-middle small text-success" style="writing-mode: vertical-rl; transform: rotate(180deg);">Aktual Aman</td>
+                                            <td class="align-middle fs-3 fw-bold text-success bg-success bg-opacity-10" id="cmTN">-</td>
+                                            <td class="align-middle fs-3 fw-bold text-muted bg-light" id="cmFP">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="bg-light fw-bold align-middle small text-danger" style="writing-mode: vertical-rl; transform: rotate(180deg);">Aktual Berisiko</td>
+                                            <td class="align-middle fs-3 fw-bold text-muted bg-light" id="cmFN">-</td>
+                                            <td class="align-middle fs-3 fw-bold text-danger bg-danger bg-opacity-10" id="cmTP">-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>

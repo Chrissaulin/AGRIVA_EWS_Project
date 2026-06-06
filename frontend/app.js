@@ -647,54 +647,16 @@ async function loadClassificationData() {
         Object.values(classCharts).forEach(c => c.destroy());
         classCharts = {};
 
-        // 1. Confusion Matrix (Bubble style approximation for Heatmap)
+        // 1. Confusion Matrix (HTML Table)
         const cm = d.confusion_matrix;
-        const maxVal = Math.max(...cm.flat());
-        classCharts.confusion = new Chart(document.getElementById('classChartConfusion'), {
-            type: 'bubble',
-            data: {
-                datasets: [
-                    {
-                        label: 'Confusion Matrix',
-                        data: [
-                            {x: 0, y: 1, r: (cm[1][0]/maxVal)*30 + 5, value: cm[1][0], title: 'False Negative'},
-                            {x: 1, y: 1, r: (cm[1][1]/maxVal)*30 + 5, value: cm[1][1], title: 'True Positive'},
-                            {x: 0, y: 0, r: (cm[0][0]/maxVal)*30 + 5, value: cm[0][0], title: 'True Negative'},
-                            {x: 1, y: 0, r: (cm[0][1]/maxVal)*30 + 5, value: cm[0][1], title: 'False Positive'}
-                        ],
-                        backgroundColor: (ctx) => {
-                            const val = ctx.raw?.value || 0;
-                            const t = ctx.raw?.title || '';
-                            if (t === 'True Positive' || t === 'True Negative') return `rgba(22, 163, 74, ${Math.max(0.2, val/maxVal)})`;
-                            return `rgba(239, 68, 68, ${Math.max(0.2, val/maxVal)})`;
-                        }
-                    }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => `${ctx.raw.title}: ${ctx.raw.value}`
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        min: -0.5, max: 1.5,
-                        ticks: { callback: (v) => v === 0 ? 'Pred: Aman' : (v === 1 ? 'Pred: Risiko' : '') }
-                    },
-                    y: {
-                        min: -0.5, max: 1.5,
-                        ticks: { callback: (v) => v === 0 ? 'Actual: Aman' : (v === 1 ? 'Actual: Risiko' : '') }
-                    }
-                }
-            }
-        });
+        if(document.getElementById('cmTN')) {
+            document.getElementById('cmTN').textContent = cm[0][0];
+            document.getElementById('cmFP').textContent = cm[0][1];
+            document.getElementById('cmFN').textContent = cm[1][0];
+            document.getElementById('cmTP').textContent = cm[1][1];
+        }
 
-        // 2. Feature Importance (Horizontal Bar)
+        // 2. Feature Importance (Horizontal Bar) - Only 8 Base Input Features
         classCharts.feature = new Chart(document.getElementById('classChartFeature'), {
             type: 'bar',
             data: {
