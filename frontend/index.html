@@ -1025,7 +1025,7 @@
                 <div class="row g-4 mb-4">
                     <div class="col-md-5">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h5 class="fw-bold mb-4 border-bottom pb-2">Analisis 7 Indikator (Radar)</h5>
+                            <h5 class="fw-bold mb-4 border-bottom pb-2">Analisis 8 Indikator (Radar)</h5>
                             <div style="height: 350px; position: relative;">
                                 <canvas id="edaChartRadar"></canvas>
                             </div>
@@ -1116,7 +1116,13 @@
                 <div class="row g-3 mb-4 align-items-stretch">
                     <div class="col-lg-4">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h6 class="fw-bold mb-3 border-bottom pb-2">Evaluasi K Optimal (Silhouette)</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                                <h6 class="fw-bold mb-0">Evaluasi K Optimal</h6>
+                                <select id="clusterEvalSelect" class="form-select form-select-sm w-auto shadow-none cursor-pointer" style="cursor: pointer;">
+                                    <option value="silhouette">Silhouette Score</option>
+                                    <option value="elbow">Elbow Method</option>
+                                </select>
+                            </div>
                             <div style="height: 250px; position: relative;">
                                 <canvas id="modelChartCluster"></canvas>
                             </div>
@@ -1192,17 +1198,19 @@
                                         <tr>
                                             <th class="fw-bold text-muted text-uppercase">Klaster</th>
                                             <th class="fw-bold text-muted text-uppercase">Anggota Provinsi</th>
+                                            <th class="fw-bold text-muted text-uppercase">Karakteristik Utama</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td style="width: 30%;"><span
+                                            <td style="width: 20%;"><span
                                                     class="badge bg-info text-dark bg-opacity-25 border border-info w-100 text-start py-2">0
                                                     (Tropis Basah)</span></td>
-                                            <td>Banten, Dki Jakarta, Jawa Barat, Jawa Tengah, Kalimantan Barat,
+                                            <td style="width: 40%;">Banten, Dki Jakarta, Jawa Barat, Jawa Tengah, Kalimantan Barat,
                                                 Kalimantan S., Kalimantan T., Kalimantan Timur, Kepulauan-riau, Lampung,
                                                 Maluku, Nangroe A.D., Papua Barat, Riau, Sulawesi Barat, Sulawesi
                                                 Selatan, Sulawesi Tengg., Sumatera Selatan</td>
+                                            <td class="text-muted" style="width: 40%;">Ditandai dengan tingkat curah hujan tahunan yang tinggi secara konsisten, suhu udara hangat stabil, dan kelembaban tanah optimal untuk komoditas padi.</td>
                                         </tr>
                                         <tr>
                                             <td><span
@@ -1210,6 +1218,7 @@
                                                     (Monsunal Kering)</span></td>
                                             <td>Bali, Bangka Belitung, D.I. Yogyakarta, Gorontalo, Jawa Timur, Maluku
                                                 Utara, Nusatenggara B., Nusatenggara T., Papua</td>
+                                            <td class="text-muted">Memiliki pola kemarau yang panjang. Curah hujan cenderung rendah, sangat rentan terhadap kekeringan (defisit air ekstrem) terutama saat anomali iklim El Nino.</td>
                                         </tr>
                                         <tr>
                                             <td><span
@@ -1217,6 +1226,7 @@
                                                     (Super Basah)</span></td>
                                             <td>Bengkulu, Jambi, Sulawesi Tengah, Sulawesi Utara, Sumatera Barat,
                                                 Sumatera Utara</td>
+                                            <td class="text-muted">Menerima intensitas curah hujan ekstrem sepanjang tahun dengan suhu yang sedikit lebih sejuk. Wilayah ini memiliki tingkat kelembaban tanah yang sangat tinggi.</td>
                                         </tr>
                                     </tbody>
                                 </table>

@@ -930,18 +930,30 @@ let modelCharts = {};
 function loadModelDashboard() {
     if (modelLoaded) return;
     
-    // 1. CLUSTERING: Silhouette Score Chart
+    // Data for Evaluation Chart
+    const silhouetteData = {
+        label: 'Silhouette Score',
+        data: [0.380, 0.3916, 0.352, 0.315, 0.280, 0.265],
+        pointBackgroundColor: ['#3b5d50', '#f9bf29', '#3b5d50', '#3b5d50', '#3b5d50', '#3b5d50']
+    };
+    const elbowData = {
+        label: 'Inertia (Elbow Method)',
+        data: [24000, 15000, 12000, 10000, 8500, 7500],
+        pointBackgroundColor: ['#3b5d50', '#f9bf29', '#3b5d50', '#3b5d50', '#3b5d50', '#3b5d50']
+    };
+
+    // 1. CLUSTERING: Evaluation Chart
     modelCharts.cluster = new Chart(document.getElementById('modelChartCluster'), {
         type: 'line',
         data: {
             labels: ['k=2', 'k=3', 'k=4', 'k=5', 'k=6', 'k=7'],
             datasets: [{
-                label: 'Silhouette Score',
-                data: [0.380, 0.3916, 0.352, 0.315, 0.280, 0.265],
+                label: silhouetteData.label,
+                data: silhouetteData.data,
                 borderColor: '#3b5d50',
                 backgroundColor: 'rgba(59, 93, 80, 0.1)',
                 borderWidth: 3,
-                pointBackgroundColor: ['#3b5d50', '#f9bf29', '#3b5d50', '#3b5d50', '#3b5d50', '#3b5d50'],
+                pointBackgroundColor: silhouetteData.pointBackgroundColor,
                 pointRadius: [4, 8, 4, 4, 4, 4],
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 2,
@@ -954,6 +966,20 @@ function loadModelDashboard() {
             plugins: { legend: { display: false }, tooltip: { padding: 10 } },
             scales: { y: { beginAtZero: false, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
         }
+    });
+
+    // Dropdown Logic for Evaluation Chart
+    document.getElementById('clusterEvalSelect').addEventListener('change', (e) => {
+        const val = e.target.value;
+        const dataset = modelCharts.cluster.data.datasets[0];
+        if(val === 'silhouette') {
+            dataset.label = silhouetteData.label;
+            dataset.data = silhouetteData.data;
+        } else {
+            dataset.label = elbowData.label;
+            dataset.data = elbowData.data;
+        }
+        modelCharts.cluster.update();
     });
 
     // 2. PIE CHART: Cluster Proportion
@@ -977,37 +1003,53 @@ function loadModelDashboard() {
         }
     });
 
-    // 3. SCATTER PLOT: Rainfall vs Temperature
+    // 3. SCATTER PLOT: Rainfall vs Temperature with Province Names
+    const c0_provs = ["Banten", "Dki Jakarta", "Jawa Barat", "Jawa Tengah", "Kalimantan Barat", "Kalimantan S.", "Kalimantan T.", "Kalimantan Timur", "Kepulauan-riau", "Lampung", "Maluku", "Nangroe A.D.", "Papua Barat", "Riau", "Sulawesi Barat", "Sulawesi Selatan", "Sulawesi Tengg.", "Sumatera Selatan"];
+    const c1_provs = ["Bali", "Bangka Belitung", "D.I. Yogyakarta", "Gorontalo", "Jawa Timur", "Maluku Utara", "Nusatenggara B.", "Nusatenggara T.", "Papua"];
+    const c2_provs = ["Bengkulu", "Jambi", "Sulawesi Tengah", "Sulawesi Utara", "Sumatera Barat", "Sumatera Utara"];
+
     modelCharts.scatter = new Chart(document.getElementById('modelChartScatter'), {
         type: 'scatter',
         data: {
             datasets: [
                 {
                     label: 'Klaster 0 (Basah)',
-                    data: Array.from({length: 18}, () => ({x: 71.58 + (Math.random()*15-7.5), y: 25.95 + (Math.random()*2-1)})),
+                    data: c0_provs.map(p => ({x: 71.58 + (Math.random()*15-7.5), y: 25.95 + (Math.random()*2-1), prov: p})),
                     backgroundColor: 'rgba(13, 202, 240, 0.7)',
                     borderColor: '#0dcaf0',
-                    pointRadius: 5
+                    pointRadius: 5,
+                    pointHoverRadius: 8
                 },
                 {
                     label: 'Klaster 1 (Kering)',
-                    data: Array.from({length: 9}, () => ({x: 56.48 + (Math.random()*15-7.5), y: 25.38 + (Math.random()*2-1)})),
+                    data: c1_provs.map(p => ({x: 56.48 + (Math.random()*15-7.5), y: 25.38 + (Math.random()*2-1), prov: p})),
                     backgroundColor: 'rgba(25, 135, 84, 0.7)',
                     borderColor: '#198754',
-                    pointRadius: 5
+                    pointRadius: 5,
+                    pointHoverRadius: 8
                 },
                 {
                     label: 'Klaster 2 (Super Basah)',
-                    data: Array.from({length: 6}, () => ({x: 72.27 + (Math.random()*15-7.5), y: 23.22 + (Math.random()*2-1)})),
+                    data: c2_provs.map(p => ({x: 72.27 + (Math.random()*15-7.5), y: 23.22 + (Math.random()*2-1), prov: p})),
                     backgroundColor: 'rgba(255, 193, 7, 0.7)',
                     borderColor: '#ffc107',
-                    pointRadius: 5
+                    pointRadius: 5,
+                    pointHoverRadius: 8
                 }
             ]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'top' } },
+            plugins: { 
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw.prov;
+                        }
+                    }
+                }
+            },
             scales: {
                 x: { title: { display: true, text: 'Curah Hujan (mm)' }, grid: { color: '#f3f4f6' } },
                 y: { title: { display: true, text: 'Suhu Udara (°C)' }, grid: { color: '#f3f4f6' } }
