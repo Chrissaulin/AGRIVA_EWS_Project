@@ -550,13 +550,9 @@
                             <h6
                                 class="fw-bold mb-4 border-bottom pb-3 d-flex justify-content-between align-items-center">
                                 <span><i class="fa-solid fa-sliders me-2 text-muted"></i> PARAMETER INPUT</span>
-                                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3"
-                                    data-bs-toggle="modal" data-bs-target="#importCsvModal">
-                                    <i class="fa-solid fa-file-import me-1"></i> Import from CSV
-                                </button>
                             </h6>
                             <form id="ewsForm">
-                                <div class="row g-4 mb-4">
+                                <div class="row g-4 mb-4 align-items-end">
                                     <div class="col-md-6">
                                         <label
                                             class="form-label small fw-bold text-muted text-uppercase">Provinsi</label>
@@ -565,23 +561,11 @@
                                             <option value="">-- Pilih Provinsi --</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label small fw-bold text-muted text-uppercase">Bulan</label>
-                                        <select id="monthExt" name="month_extracted"
-                                            class="form-select border-bottom-only bg-light" required>
-                                            <option value="1">Januari</option>
-                                            <option value="2">Februari</option>
-                                            <option value="3">Maret</option>
-                                            <option value="4">April</option>
-                                            <option value="5">Mei</option>
-                                            <option value="6">Juni</option>
-                                            <option value="7">Juli</option>
-                                            <option value="8">Agustus</option>
-                                            <option value="9">September</option>
-                                            <option value="10">Oktober</option>
-                                            <option value="11">November</option>
-                                            <option value="12">Desember</option>
-                                        </select>
+                                    <div class="col-md-6 d-flex justify-content-end">
+                                        <button type="button" class="btn btn-outline-success rounded-pill px-4"
+                                            data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                                            <i class="fa-solid fa-file-import me-2"></i> Import from CSV
+                                        </button>
                                     </div>
                                 </div>
 
@@ -721,15 +705,14 @@
                                             data-bs-parent="#indicatorAccordion">
                                             <div class="accordion-body small text-muted">
                                                 <ul class="mb-0 ps-3">
-                                                    <li><strong>SPI 3 Bulan:</strong> Standardized Precipitation Index.
-                                                        Nilai negatif menunjukkan kekeringan.</li>
-                                                    <li><strong>WSI:</strong> Water Satisfaction Index. Semakin tinggi
-                                                        persentase, semakin baik kebutuhan air tanaman terpenuhi.</li>
-                                                    <li><strong>FPAR:</strong> Fraction of Photosynthetically Active
-                                                        Radiation. Mengukur aktivitas fotosintesis (kesehatan vegetasi).
-                                                    </li>
-                                                    <li><strong>Radiasi Matahari:</strong> Energi matahari yang mencapai
-                                                        permukaan bumi, mempengaruhi evaporasi.</li>
+                                                    <li><strong class="text-dark">Curah Hujan (Rainfall):</strong> Jumlah curah hujan (dalam mm). Berpengaruh langsung pada ketersediaan air tanah.</li>
+                                                    <li><strong class="text-dark">SPI 3 Bulan:</strong> <i>Standardized Precipitation Index</i>. Indeks anomali curah hujan. Nilai negatif menandakan periode kekeringan.</li>
+                                                    <li><strong class="text-dark">Suhu Rata-rata:</strong> Suhu udara (dalam °C). Suhu ekstrem bisa memicu <i>heat stress</i> pada tanaman pangan.</li>
+                                                    <li><strong class="text-dark">WSI:</strong> <i>Water Satisfaction Index</i>. Semakin tinggi persentase, semakin baik kebutuhan air tanaman terpenuhi.</li>
+                                                    <li><strong class="text-dark">Radiasi Matahari:</strong> Energi matahari yang mencapai permukaan (J/m²). Penting untuk laju evaporasi dan fotosintesis.</li>
+                                                    <li><strong class="text-dark">Kelembaban Tanah:</strong> Kandungan air aktual di dalam lapisan tanah (m³/m³). Krusial untuk penyerapan akar.</li>
+                                                    <li><strong class="text-dark">FPAR Vegetasi:</strong> <i>Fraction of Photosynthetically Active Radiation</i>. Mengukur aktivitas fotosintesis (kesehatan tanaman).</li>
+                                                    <li><strong class="text-dark">FPAR Z-Score:</strong> Indikator anomali kesehatan vegetasi. Nilai negatif berarti tanaman sedang dalam kondisi lebih buruk dari normalnya.</li>
                                                 </ul>
                                             </div>
                                         </div>
