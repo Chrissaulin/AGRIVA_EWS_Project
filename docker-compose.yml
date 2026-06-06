@@ -24,7 +24,18 @@ services:
       DATABASE_URL: postgresql://agriva_user:agriva_pass@db:5432/agriva_db
     volumes:
       - ./01_dapur_jupyter/data:/app/raw_data:ro
+      - ./01_dapur_jupyter/models:/app/models_output:ro
       - ./backend:/app
+    networks:
+      - agriva_network
+  frontend:
+    image: nginx:alpine
+    container_name: agriva_frontend
+    ports:
+      - "5174:80"   # expose on localhost:5174
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro   # serve static files
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - agriva_network
 
@@ -32,5 +43,4 @@ volumes:
   pg_data:
 
 networks:
-  agriva_network:
-    external: true
+  agriva_network:

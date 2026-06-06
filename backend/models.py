@@ -1,55 +1,160 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, UniqueConstraint
+from sqlalchemy import (
+    Column, Integer, String, Float, Date, Text,
+    DateTime, ForeignKey, UniqueConstraint, func
+)
 from sqlalchemy.orm import relationship
 from database import Base
 
+
 class Province(Base):
+    """
+    Static reference table for 33 Indonesian provinces.
+    Seeded once from CSV. cluster_wilayah determines which EWS model to use.
+    """
     __tablename__ = "province"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, nullable=False, index=True)
-    latitude = Column(Float, nullable=True)
-    longitude = Column(Float, nullable=True)
-    cluster_wilayah = Column(Integer, nullable=True)
-    # Relationship to historical metrics
-    metrics = relationship("HistoricalMetric", back_populates="province")
+
+    id               = Column(Integer, primary_key=True, index=True)
+    name             = Column(String(100), unique=True, nullable=False, index=True)
+    latitude         = Column(Float, nullable=True)
+    longitude        = Column(Float, nullable=True)
+    cluster_wilayah  = Column(Integer, nullable=False)   # 0, 1, or 2
+    asap0_id         = Column(Integer, nullable=True)
+    asap1_id         = Column(Integer, nullable=True)
+
+    # Relationships
+    metrics              = relationship("HistoricalMetric",   back_populates="province")
+    forecast_features    = relationship("ForecastFeature",    back_populates="province")
+    ews_results          = relationship("EWSForecastResult",  back_populates="province")
+    simulations          = relationship("SimulationSession",  back_populates="province")
+
 
 class HistoricalMetric(Base):
+    """
+    Historical climate observations per province per dekad.
+    Seeded from data_master_clustered.csv. Read-only after seed.
+    """
     __tablename__ = "historical_metric"
-    id = Column(Integer, primary_key=True, index=True)
-    province_id = Column(Integer, ForeignKey("province.id"), nullable=False)
-    date = Column(Date, nullable=False)
-    rainfall = Column(Float)
-    spi_3_months = Column(Float)
-    temperature = Column(Float)
-    wsi = Column(Float)
-    solar_radiation = Column(Float)
-    soil_moisture = Column(Float)
-    fpar = Column(Float)
-    fpar_zscore = Column(Float)
-    target_biner = Column(Integer)
-    month_extracted = Column(Integer)
-    year = Column(Integer)
-    dayofyear = Column(Integer)
-    weekofyear = Column(Integer)
-    # Ensure one record per province per date
-    __table_args__ = (UniqueConstraint('province_id', 'date', name='_province_date_uc'),)
+
+    id             = Column(Integer, primary_key=True, index=True)
+    province_id    = Column(Integer, ForeignKey("province.id"), nullable=False, index=True)
+    date           = Column(Date, nullable=False, index=True)
+    rainfall       = Column(Float, nullable=True)
+    spi_3_months   = Column(Float, nullable=True)
+    temperature    = Column(Float, nullable=True)
+    wsi            = Column(Float, nullable=True)
+    solar_radiation= Column(Float, nullable=True)
+    soil_moisture  = Column(Float, nullable=True)
+    fpar           = Column(Float, nullable=True)
+    fpar_zscore    = Column(Float, nullable=True)
+    target_biner   = Column(Integer, nullable=True)
+    dekad_id       = Column(Integer, nullable=True)
+    month          = Column(Integer, nullable=True)
+    year           = Column(Integer, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("province_id", "date", name="_hist_province_date_uc"),
+    )
+
     province = relationship("Province", back_populates="metrics")
 
-class ForecastRecord(Base):
-    __tablename__ = "forecast_record"
-    id = Column(Integer, primary_key=True, index=True)
-    province_id = Column(Integer, ForeignKey("province.id"), nullable=False)
-    date = Column(Date, nullable=False)
-    rainfall = Column(Float)
-    spi_3_months = Column(Float)
-    temperature = Column(Float)
-    wsi = Column(Float)
-    solar_radiation = Column(Float)
-    soil_moisture = Column(Float)
-    fpar = Column(Float)
-    fpar_zscore = Column(Float)
-    month_extracted = Column(Integer)
-    year = Column(Integer)
-    dayofyear = Column(Integer)
-    weekofyear = Column(Integer)
-    __table_args__ = (UniqueConstraint('province_id', 'date', name='_forecast_province_date_uc'),)
-    province = relationship("Province")
+
+class ForecastBatch(Base):
+    """
+    One record per forecast job run. Tracks status and metadata.
+    Use batch_id = latest done batch for map queries.
+    """
+    __tablename__ = "forecast_batch"
+
+    id               = Column(Integer, primary_key=True, index=True)
+    created_at       = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    triggered_by     = Column(String(50), nullable=True)   # "api", "startup", "manual"
+    months_ahead     = Column(Integer, nullable=False)
+    status           = Column(String(20), nullable=False, default="pending")
+    # values: "pending" | "running" | "done" | "failed"
+    total_provinces  = Column(Integer, nullable=True)
+    notes            = Column(Text, nullable=True)
+
+    # Relationships
+    forecast_features = relationship("ForecastFeature",   back_populates="batch")
+    ews_results       = relationship("EWSForecastResult", back_populates="batch")
+
+
+class ForecastFeature(Base):
+    """
+    Predicted climate feature values per province per future dekad.
+    Generated by model_forecast_global.pkl. Input to EWS classification.
+    """
+    __tablename__ = "forecast_feature"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    province_id     = Column(Integer, ForeignKey("province.id"), nullable=False, index=True)
+    batch_id        = Column(Integer, ForeignKey("forecast_batch.id"), nullable=False, index=True)
+    forecast_date   = Column(Date, nullable=False, index=True)
+    rainfall        = Column(Float, nullable=True)
+    spi_3_months    = Column(Float, nullable=True)
+    temperature     = Column(Float, nullable=True)
+    wsi             = Column(Float, nullable=True)
+    solar_radiation = Column(Float, nullable=True)
+    soil_moisture   = Column(Float, nullable=True)
+    fpar            = Column(Float, nullable=True)
+    fpar_zscore     = Column(Float, nullable=True)
+    month           = Column(Integer, nullable=True)
+    year            = Column(Integer, nullable=True)
+    dekad_id        = Column(Integer, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "province_id", "batch_id", "forecast_date",
+            name="_ff_province_batch_date_uc"
+        ),
+    )
+
+    province = relationship("Province", back_populates="forecast_features")
+    batch    = relationship("ForecastBatch", back_populates="forecast_features")
+
+
+class EWSForecastResult(Base):
+    """
+    EWS binary classification result per province per future dekad.
+    Generated by pipeline_ews_biner_cluster_{0/1/2}.pkl.
+    JOIN with forecast_feature on (province_id, batch_id, forecast_date).
+    """
+    __tablename__ = "ews_forecast_result"
+
+    id               = Column(Integer, primary_key=True, index=True)
+    province_id      = Column(Integer, ForeignKey("province.id"), nullable=False, index=True)
+    batch_id         = Column(Integer, ForeignKey("forecast_batch.id"), nullable=False, index=True)
+    forecast_date    = Column(Date, nullable=False, index=True)
+    cluster_used     = Column(Integer, nullable=False)   # 0, 1, or 2
+    ews_label        = Column(Integer, nullable=False)   # 0 = no warning, 1 = warning
+    ews_probability  = Column(Float, nullable=False)     # model confidence [0.0–1.0]
+
+    __table_args__ = (
+        UniqueConstraint(
+            "province_id", "batch_id", "forecast_date",
+            name="_ews_province_batch_date_uc"
+        ),
+    )
+
+    province = relationship("Province", back_populates="ews_results")
+    batch    = relationship("ForecastBatch", back_populates="ews_results")
+
+
+class SimulationSession(Base):
+    """
+    Lightweight metadata for user-uploaded CSV simulations.
+    Does NOT store raw uploaded rows — only result summary per run.
+    """
+    __tablename__ = "simulation_session"
+
+    id               = Column(Integer, primary_key=True, index=True)
+    run_at           = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    source_filename  = Column(String(255), nullable=True)
+    province_id      = Column(Integer, ForeignKey("province.id"), nullable=True)
+    cluster_used     = Column(Integer, nullable=True)
+    ews_label        = Column(Integer, nullable=True)      # result: 0 or 1
+    ews_probability  = Column(Float, nullable=True)
+    row_count        = Column(Integer, nullable=True)
+    notes            = Column(Text, nullable=True)
+
+    province = relationship("Province", back_populates="simulations")

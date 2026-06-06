@@ -39,4 +39,5 @@ def init_db(retries: int = 5, delay: int = 2):
     raise RuntimeError("Failed to connect to the database after several attempts")
 
 # Run initialization at import time
-init_db()
+# init_db()
+

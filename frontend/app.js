@@ -262,7 +262,7 @@ function setupPredictForm() {
             Soil_Moisture: parseFloat(form.Soil_Moisture.value),
             FPAR: parseFloat(form.FPAR.value),
             FPAR_zscore: parseFloat(form.FPAR_zscore.value),
-            month_extracted: parseInt(form.month_extracted.value),
+            month_extracted: (form.month_extracted && form.month_extracted.value) ? parseInt(form.month_extracted.value) : (new Date().getMonth() + 1),
         };
 
         try {
@@ -389,6 +389,7 @@ function showPredictResult(r) {
     content.classList.remove('d-none');
 
     const isRisk = r.prediction === 1;
+    const threshold = r.threshold || 0.5; // Default to 0.5 if not provided
     const badge = document.getElementById('resultBadge');
     
     // Set Badge
@@ -406,29 +407,30 @@ function showPredictResult(r) {
 
     // Render Gauge Chart for Berisiko Probability
     const probRisk = r.probability.berisiko * 100;
-    renderGaugeChart(probRisk);
-    
+    const thresholdPercent = threshold * 100;
+    renderGaugeChart(probRisk, thresholdPercent);
+
     // Description text
     const desc = document.getElementById('resDescription');
     const probTextSpan = document.getElementById('resProbText');
     
     if(isRisk) {
-        desc.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Indikator berada dalam zona <strong>RAWAN</strong>. Peluang bahaya mencapai <strong>${probRisk.toFixed(1)}%</strong>, melampaui ambang batas model. Disarankan segera merencanakan mitigasi kekeringan dan pengaturan pengairan di wilayah ini.`;
+        desc.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Indikator berada dalam zona <strong>RAWAN</strong>. Peluang bahaya mencapai <strong>${probRisk.toFixed(1)}%</strong>, melampaui ambang batas model (${thresholdPercent.toFixed(1)}%). Disarankan segera merencanakan mitigasi kekeringan dan pengaturan pengairan di wilayah ini.`;
     } else {
-        desc.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> Indikator berada dalam zona <strong>STABIL</strong>. Peluang bahaya (<strong>${probRisk.toFixed(1)}%</strong>) berada di bawah ambang batas bahaya (Threshold). Kondisi diprediksi mendukung pertumbuhan pangan dengan baik.`;
+        desc.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> Indikator berada dalam zona <strong>STABIL</strong>. Peluang bahaya (<strong>${probRisk.toFixed(1)}%</strong>) berada di bawah ambang batas bahaya (${thresholdPercent.toFixed(1)}%). Kondisi diprediksi mendukung pertumbuhan pangan dengan baik.`;
     }
 }
 
-function renderGaugeChart(probabilityValue) {
+function renderGaugeChart(probabilityValue, thresholdPercent = 50) {
     const ctx = document.getElementById('gaugeChart');
     if(predictGaugeChart) predictGaugeChart.destroy();
     
     const valueEl = document.getElementById('gaugeValue');
     valueEl.textContent = probabilityValue.toFixed(1) + '%';
     
-    if(probabilityValue > 50) valueEl.className = 'fw-bold mb-0 text-danger';
+    if(probabilityValue > thresholdPercent) valueEl.className = 'fw-bold mb-0 text-danger';
     else valueEl.className = 'fw-bold mb-0 text-success';
-
+    
     predictGaugeChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -436,7 +438,7 @@ function renderGaugeChart(probabilityValue) {
             datasets: [{
                 data: [probabilityValue, 100 - probabilityValue],
                 backgroundColor: [
-                    probabilityValue > 50 ? '#ef4444' : '#10b981', 
+                    probabilityValue > thresholdPercent ? '#ef4444' : '#10b981', 
                     '#e5e7eb'
                 ],
                 borderWidth: 0,
