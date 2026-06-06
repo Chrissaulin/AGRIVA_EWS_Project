@@ -1,14 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
-from typing import Optional
 from sqlalchemy.orm import Session
 import pandas as pd
 import numpy as np
 
 import models
 from database import get_db
-import shared
 import core.config as config
-from services.predict_service import predict_ews_endpoint, forecast_predict
+from services.predict_service import forecast_predict
 
 
 router = APIRouter()

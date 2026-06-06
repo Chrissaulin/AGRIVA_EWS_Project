@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 import models
 from database import get_db
-import shared
+from services.forecast_service import execute_batch_forecast
 
 
 router = APIRouter()
@@ -12,7 +12,6 @@ router = APIRouter()
 @router.post("/api/admin/run-forecast")
 def run_forecast_batch(req, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     from schemas.forecast import RunForecastRequest
-    from services.forecast_service import execute_batch_forecast
 
     if not isinstance(req, RunForecastRequest):
         req = RunForecastRequest(**req)

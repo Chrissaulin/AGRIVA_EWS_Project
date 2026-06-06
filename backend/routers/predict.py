@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 
 import models
 from database import get_db
-import core.config as config
 from services.predict_service import predict_ews_endpoint
 
 
