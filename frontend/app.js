@@ -1088,19 +1088,7 @@ async function loadForecastingEvalData() {
         document.getElementById('forecastKpiMape').textContent = `${d.kpis.mape}%`;
         document.getElementById('forecastKpiSafety').textContent = `± ${d.kpis.safety}`;
 
-        // Render Table first (so it doesn't fail if charts fail)
-        const tbody = document.getElementById('forecastTableBody');
-        if (tbody && d.table) {
-            tbody.innerHTML = d.table.map(r => {
-                const activeClass = r.target === target ? 'table-warning fw-bold' : '';
-                return `<tr class="${activeClass}">
-                    <td class="text-start">${r.target}</td>
-                    <td>${r.mae}</td>
-                    <td>${r.rmse}</td>
-                    <td>${r.mape}%</td>
-                </tr>`;
-            }).join('');
-        }
+        // Render Table logic removed as per user request
 
         // Destroy old charts
         Object.values(forecastEvalCharts).forEach(c => {
@@ -1119,26 +1107,6 @@ async function loadForecastingEvalData() {
                 ]
             },
             options: { responsive: true, maintainAspectRatio: false }
-        });
-
-        // 2. Scatter Plot
-        const scatterData = (d.charts.actual || []).map((a, i) => ({x: (d.charts.predicted || [])[i], y: a}));
-        forecastEvalCharts.scatter = new Chart(document.getElementById('forecastChartScatter'), {
-            type: 'scatter',
-            data: {
-                datasets: [{
-                    label: 'Aktual vs Prediksi',
-                    data: scatterData,
-                    backgroundColor: 'rgba(59, 93, 80, 0.6)'
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: {
-                    x: { title: { display: true, text: 'Prediksi Model' } },
-                    y: { title: { display: true, text: 'Nilai Aktual' } }
-                }
-            }
         });
 
         // 3. Histogram

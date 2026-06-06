@@ -917,9 +917,9 @@
 
             <div class="container-fluid px-4 pb-5">
                 <div class="mb-4">
-                    <h2 class="fw-bold text-dark">EDA & Analisis Data Historis</h2>
+                    <h2 class="fw-bold text-dark">Exploratory Data Analysis</h2>
                     <p class="text-muted mb-0">Eksplorasi dataset EWS secara komprehensif (Sebaran, Korelasi, dan
-                        Klaster).</p>
+                        Rata-rata).</p>
                 </div>
 
                 <!-- 2. Baris Pertama: KPI Scorecards -->
@@ -982,7 +982,7 @@
                 <div class="row g-4 mb-4">
                     <div class="col-md-5">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h5 class="fw-bold mb-4 border-bottom pb-2">Proporsi Status EWS (Target)</h5>
+                            <h5 class="fw-bold mb-4 border-bottom pb-2">Proporsi Status EWS</h5>
                             <div style="height: 300px; position: relative;">
                                 <canvas id="edaChartTarget"></canvas>
                             </div>
@@ -991,7 +991,7 @@
                     <div class="col-md-7">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
                             <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
-                                <h5 class="fw-bold mb-0">Distribusi Fitur (Histogram)</h5>
+                                <h5 class="fw-bold mb-0">Distribusi Fitur</h5>
                                 <select id="edaDistFeature" class="form-select form-select-sm w-auto bg-light border-0">
                                     <option value="Rainfall">Curah Hujan</option>
                                     <option value="Temperature">Suhu Udara</option>
@@ -1025,7 +1025,7 @@
                 <div class="row g-4 mb-4">
                     <div class="col-md-5">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h5 class="fw-bold mb-4 border-bottom pb-2">Analisis 8 Indikator (Radar)</h5>
+                            <h5 class="fw-bold mb-4 border-bottom pb-2">Analisis 8 Indikator</h5>
                             <div style="height: 350px; position: relative;">
                                 <canvas id="edaChartRadar"></canvas>
                             </div>
@@ -1079,9 +1079,8 @@
         <section class="page" id="page-model" style="background-color: #f8f9fa; min-height: calc(100vh - 86px);">
             <div class="container-fluid px-4 py-5">
                 <div class="mb-4">
-                    <h2 class="fw-bold text-dark">Dashboard Evaluasi Model Clustering</h2>
-                    <p class="text-muted mb-0">Hasil analisis dan evaluasi algoritma K-Means Clustering pada data iklim
-                        historis.</p>
+                    <h2 class="fw-bold text-dark">Dashboard Clustering</h2>
+                    <p class="text-muted mb-0">Hasil analisis dan evaluasi Clustering.</p>
                 </div>
 
                 <!-- ROW 1: KPI Cards -->
@@ -1118,7 +1117,9 @@
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
                             <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
                                 <h6 class="fw-bold mb-0">Evaluasi K Optimal</h6>
-                                <select id="clusterEvalSelect" class="form-select form-select-sm w-auto shadow-none cursor-pointer" style="cursor: pointer;">
+                                <select id="clusterEvalSelect"
+                                    class="form-select form-select-sm w-auto shadow-none cursor-pointer"
+                                    style="cursor: pointer;">
                                     <option value="silhouette">Silhouette Score</option>
                                     <option value="elbow">Elbow Method</option>
                                 </select>
@@ -1206,11 +1207,14 @@
                                             <td style="width: 20%;"><span
                                                     class="badge bg-info text-dark bg-opacity-25 border border-info w-100 text-start py-2">0
                                                     (Tropis Basah)</span></td>
-                                            <td style="width: 40%;">Banten, Dki Jakarta, Jawa Barat, Jawa Tengah, Kalimantan Barat,
+                                            <td style="width: 40%;">Banten, Dki Jakarta, Jawa Barat, Jawa Tengah,
+                                                Kalimantan Barat,
                                                 Kalimantan S., Kalimantan T., Kalimantan Timur, Kepulauan-riau, Lampung,
                                                 Maluku, Nangroe A.D., Papua Barat, Riau, Sulawesi Barat, Sulawesi
                                                 Selatan, Sulawesi Tengg., Sumatera Selatan</td>
-                                            <td class="text-muted" style="width: 40%;">Ditandai dengan tingkat curah hujan tahunan yang tinggi secara konsisten, suhu udara hangat stabil, dan kelembaban tanah optimal untuk komoditas padi.</td>
+                                            <td class="text-muted" style="width: 40%;">Ditandai dengan tingkat curah
+                                                hujan tahunan yang tinggi secara konsisten, suhu udara hangat stabil,
+                                                dan kelembaban tanah optimal untuk komoditas padi.</td>
                                         </tr>
                                         <tr>
                                             <td><span
@@ -1218,7 +1222,9 @@
                                                     (Monsunal Kering)</span></td>
                                             <td>Bali, Bangka Belitung, D.I. Yogyakarta, Gorontalo, Jawa Timur, Maluku
                                                 Utara, Nusatenggara B., Nusatenggara T., Papua</td>
-                                            <td class="text-muted">Memiliki pola kemarau yang panjang. Curah hujan cenderung rendah, sangat rentan terhadap kekeringan (defisit air ekstrem) terutama saat anomali iklim El Nino.</td>
+                                            <td class="text-muted">Memiliki pola kemarau yang panjang. Curah hujan
+                                                cenderung rendah, sangat rentan terhadap kekeringan (defisit air
+                                                ekstrem) terutama saat anomali iklim El Nino.</td>
                                         </tr>
                                         <tr>
                                             <td><span
@@ -1226,7 +1232,9 @@
                                                     (Super Basah)</span></td>
                                             <td>Bengkulu, Jambi, Sulawesi Tengah, Sulawesi Utara, Sumatera Barat,
                                                 Sumatera Utara</td>
-                                            <td class="text-muted">Menerima intensitas curah hujan ekstrem sepanjang tahun dengan suhu yang sedikit lebih sejuk. Wilayah ini memiliki tingkat kelembaban tanah yang sangat tinggi.</td>
+                                            <td class="text-muted">Menerima intensitas curah hujan ekstrem sepanjang
+                                                tahun dengan suhu yang sedikit lebih sejuk. Wilayah ini memiliki tingkat
+                                                kelembaban tanah yang sangat tinggi.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1243,8 +1251,9 @@
             <div class="container-fluid px-4 py-5">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2 class="fw-bold text-dark">Dashboard Klasifikasi (XGBoost)</h2>
-                        <p class="text-muted mb-0">Evaluasi performa model klasifikasi peringatan dini krisis pangan.
+                        <h2 class="fw-bold text-dark">Dashboard Klasifikasi</h2>
+                        <p class="text-muted mb-0">Evaluasi performa model klasifikasi peringatan dini krisis pangan
+                            menggunakan XGBoost Classifier.
                         </p>
                     </div>
                     <div>
@@ -1261,13 +1270,13 @@
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
-                            <p class="small text-muted fw-bold mb-1 text-uppercase">Recall (Sensitivitas)</p>
+                            <p class="small text-muted fw-bold mb-1 text-uppercase">Recall</p>
                             <h3 class="fw-bold text-primary mb-0" id="classKpiRecall">-</h3>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
-                            <p class="small text-muted fw-bold mb-1 text-uppercase">F1-Score Global</p>
+                            <p class="small text-muted fw-bold mb-1 text-uppercase">F1-Score</p>
                             <h3 class="fw-bold text-primary mb-0" id="classKpiF1">-</h3>
                         </div>
                     </div>
@@ -1357,8 +1366,9 @@
             <div class="container-fluid px-4 py-5">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2 class="fw-bold text-dark">Dashboard Evaluasi Forecasting (XGBoost Regressor)</h2>
-                        <p class="text-muted mb-0">Evaluasi performa regresi peramalan agroklimatologi deret waktu.</p>
+                        <h2 class="fw-bold text-dark">Dashboard Forecasting</h2>
+                        <p class="text-muted mb-0">Evaluasi performa peramalan agroklimatologi deret waktu menggunakan
+                            XGBoost Regressor.</p>
                     </div>
                     <div class="d-flex gap-2">
                         <select class="form-select border-0 shadow-sm" id="forecastEvalFilterTarget"
@@ -1409,56 +1419,27 @@
                     </div>
                 </div>
 
-                <!-- ROW 2: Charts (Line & Scatter) -->
+                <!-- ROW 2: Charts (Line) -->
                 <div class="row g-4 mb-4 align-items-stretch">
-                    <div class="col-lg-7">
+                    <div class="col-lg-12">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h6 class="fw-bold mb-3 border-bottom pb-2">Grafik Aktual vs Prediksi (Time-Series)</h6>
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Grafik Aktual vs Prediksi</h6>
                             <div style="height: 300px; position: relative;"
                                 class="d-flex justify-content-center align-items-center">
                                 <canvas id="forecastChartLine"></canvas>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-5">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h6 class="fw-bold mb-3 border-bottom pb-2">Distribusi Aktual vs Prediksi (Scatter)</h6>
-                            <div style="height: 300px; position: relative;"
-                                class="d-flex justify-content-center align-items-center">
-                                <canvas id="forecastChartScatter"></canvas>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- ROW 3: Charts (Histogram & Table) -->
+                <!-- ROW 3: Charts (Histogram) -->
                 <div class="row g-4 align-items-stretch">
-                    <div class="col-lg-7">
+                    <div class="col-lg-12">
                         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h6 class="fw-bold mb-3 border-bottom pb-2">Histogram Residu (Distribusi Error)</h6>
+                            <h6 class="fw-bold mb-3 border-bottom pb-2">Distribusi Error</h6>
                             <div style="height: 300px; position: relative;"
                                 class="d-flex justify-content-center align-items-center">
                                 <canvas id="forecastChartHist"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-5">
-                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                            <h6 class="fw-bold mb-3 border-bottom pb-2">Rekapitulasi Performa Target Evaluasi</h6>
-                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                                <table class="table table-sm table-bordered align-middle small text-center mb-0">
-                                    <thead class="table-light sticky-top">
-                                        <tr>
-                                            <th class="fw-bold text-muted text-uppercase">Target</th>
-                                            <th class="fw-bold text-muted text-uppercase">MAE</th>
-                                            <th class="fw-bold text-muted text-uppercase">RMSE</th>
-                                            <th class="fw-bold text-muted text-uppercase">MAPE</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="forecastTableBody">
-                                        <!-- Injected via JS -->
-                                    </tbody>
-                                </table>
                             </div>
                         </div>
                     </div>
