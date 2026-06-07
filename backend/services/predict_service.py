@@ -12,8 +12,7 @@ import core.config as config
 import models
 from repositories.province_repo import ProvinceRepository
 from repositories.simulation_repo import SimulationSessionRepository
-from ml.predictor import EWSPredictor
-from services.ews_service import resolve_pipeline
+from services.ews_service import resolve_pipeline, predict_ews
 from services.feature_engineering import get_province_dataframe_with_features
 from sqlalchemy.orm import Session
 
@@ -29,6 +28,7 @@ def predict_ews_endpoint(request, db: Session) -> dict[str, Any]:
         request = PredictionRequest(**request)
 
     cluster_id = config.CLUSTER_MAP.get(request.province, 0)
+    from ml.loader import ews_pipeline
 
     df_prov = get_province_dataframe_with_features(request.province, db)
     if df_prov.empty:
@@ -45,28 +45,16 @@ def predict_ews_endpoint(request, db: Session) -> dict[str, Any]:
     last_row["FPAR - zscore"] = request.FPAR_zscore
     last_row["month_extracted"] = request.month_extracted
 
-    from ml.loader import ews_pipeline
-
     if ews_pipeline is None:
         raise RuntimeError("EWS Master Pipeline not loaded.")
 
-    if isinstance(ews_pipeline, dict):
-        if cluster_id not in ews_pipeline:
-            raise ValueError(f"Model for cluster {cluster_id} not found.")
-        cluster_dict = ews_pipeline[cluster_id]
-        if isinstance(cluster_dict, dict) and "model_xgboost" in cluster_dict:
-            pipeline = cluster_dict["model_xgboost"]
-            threshold = cluster_dict.get("threshold_siaga", 0.5)
-        else:
-            pipeline = cluster_dict
-            threshold = 0.5
-    else:
-        pipeline = ews_pipeline
-        threshold = 0.5
-
-    feature_cols = list(pipeline.feature_names_in_)
-    features = pd.DataFrame([last_row])[feature_cols].fillna(0)
-    ews_result = EWSPredictor.predict(pipeline, features, threshold=threshold)
+    ews_result = predict_ews(
+        cluster_id=cluster_id,
+        features_df=pd.DataFrame([last_row]).fillna(0),
+        threshold=None,
+        pipeline_override=ews_pipeline if not isinstance(ews_pipeline, dict) else None,
+    )
+    threshold = ews_result["threshold"]
 
     try:
         repo = ProvinceRepository(db)

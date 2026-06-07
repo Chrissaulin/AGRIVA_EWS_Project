@@ -119,7 +119,7 @@ def execute_batch_forecast(batch_id: int) -> None:
                 pipeline, threshold = resolve_pipeline(cluster_id)
                 f_cols = list(pipeline.feature_names_in_)
                 features_df = pd.DataFrame([new_row]).reindex(columns=f_cols, fill_value=0)
-                ews_res = EWSPredictor.predict(pipeline, features_df, threshold=threshold)
+                ews_res = predict_ews(cluster_id, features_df, threshold=threshold)
 
                 res_repo = EWSForecastResultRepository(db)
                 res_repo.create(
