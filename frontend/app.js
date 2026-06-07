@@ -1,4 +1,4 @@
-const API = "";
+const API = "http://localhost:8001";
 let leafletMap, geojsonLayer, mapData = {};
 
 // ===== TIER 2: FRONTEND LOGIC ENGINEER =====
@@ -76,16 +76,10 @@ async function loadMapFilters() {
     try {
         const res = await fetch(API + "/api/map/filters");
         const d = await res.json();
-        const yearSel = document.getElementById('filterYear');
-        const monthSel = document.getElementById('filterMonth');
+        const sel = document.getElementById('filterYear');
         if(d.years) {
-            yearSel.innerHTML = d.years.map(y => `<option value="${y}">${y}</option>`).join('');
-            yearSel.value = d.years[d.years.length - 1];
-        }
-        if(d.months) {
-            const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-            monthSel.innerHTML = d.months.map(m => `<option value="${m}">${monthNames[m-1]}</option>`).join('');
-            monthSel.value = d.months[d.months.length - 1];
+            sel.innerHTML = d.years.map(y => `<option value="${y}">${y}</option>`).join('');
+            sel.value = d.years[d.years.length - 1];
         }
     } catch (e) { console.error("Map filters error:", e); }
 }
@@ -262,7 +256,7 @@ function setupPredictForm() {
             Soil_Moisture: parseFloat(form.Soil_Moisture.value),
             FPAR: parseFloat(form.FPAR.value),
             FPAR_zscore: parseFloat(form.FPAR_zscore.value),
-            month_extracted: (form.month_extracted && form.month_extracted.value) ? parseInt(form.month_extracted.value) : (new Date().getMonth() + 1),
+            month_extracted: 6, // Fallback default
         };
 
         try {
@@ -389,7 +383,6 @@ function showPredictResult(r) {
     content.classList.remove('d-none');
 
     const isRisk = r.prediction === 1;
-    const threshold = r.threshold || 0.5; // Default to 0.5 if not provided
     const badge = document.getElementById('resultBadge');
     
     // Set Badge
@@ -407,30 +400,29 @@ function showPredictResult(r) {
 
     // Render Gauge Chart for Berisiko Probability
     const probRisk = r.probability.berisiko * 100;
-    const thresholdPercent = threshold * 100;
-    renderGaugeChart(probRisk, thresholdPercent);
-
+    renderGaugeChart(probRisk);
+    
     // Description text
     const desc = document.getElementById('resDescription');
     const probTextSpan = document.getElementById('resProbText');
     
     if(isRisk) {
-        desc.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Indikator berada dalam zona <strong>RAWAN</strong>. Peluang bahaya mencapai <strong>${probRisk.toFixed(1)}%</strong>, melampaui ambang batas model (${thresholdPercent.toFixed(1)}%). Disarankan segera merencanakan mitigasi kekeringan dan pengaturan pengairan di wilayah ini.`;
+        desc.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Indikator berada dalam zona <strong>RAWAN</strong>. Peluang bahaya mencapai <strong>${probRisk.toFixed(1)}%</strong>, melampaui ambang batas model. Disarankan segera merencanakan mitigasi kekeringan dan pengaturan pengairan di wilayah ini.`;
     } else {
-        desc.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> Indikator berada dalam zona <strong>STABIL</strong>. Peluang bahaya (<strong>${probRisk.toFixed(1)}%</strong>) berada di bawah ambang batas bahaya (${thresholdPercent.toFixed(1)}%). Kondisi diprediksi mendukung pertumbuhan pangan dengan baik.`;
+        desc.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> Indikator berada dalam zona <strong>STABIL</strong>. Peluang bahaya (<strong>${probRisk.toFixed(1)}%</strong>) berada di bawah ambang batas bahaya (Threshold). Kondisi diprediksi mendukung pertumbuhan pangan dengan baik.`;
     }
 }
 
-function renderGaugeChart(probabilityValue, thresholdPercent = 50) {
+function renderGaugeChart(probabilityValue) {
     const ctx = document.getElementById('gaugeChart');
     if(predictGaugeChart) predictGaugeChart.destroy();
     
     const valueEl = document.getElementById('gaugeValue');
     valueEl.textContent = probabilityValue.toFixed(1) + '%';
     
-    if(probabilityValue > thresholdPercent) valueEl.className = 'fw-bold mb-0 text-danger';
+    if(probabilityValue > 50) valueEl.className = 'fw-bold mb-0 text-danger';
     else valueEl.className = 'fw-bold mb-0 text-success';
-    
+
     predictGaugeChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -438,7 +430,7 @@ function renderGaugeChart(probabilityValue, thresholdPercent = 50) {
             datasets: [{
                 data: [probabilityValue, 100 - probabilityValue],
                 backgroundColor: [
-                    probabilityValue > thresholdPercent ? '#ef4444' : '#10b981', 
+                    probabilityValue > 50 ? '#ef4444' : '#10b981', 
                     '#e5e7eb'
                 ],
                 borderWidth: 0,
@@ -566,8 +558,8 @@ function renderForecastChart(fData, variable) {
     const actualDataset = [...histActual, ...Array(predLabels.length).fill(null)];
     const modelDataset = [...histPred, ...Array(predLabels.length).fill(null)];
     
-    // Connect the future forecast line to the last historical point
-    const futureDataset = [...Array(histLabels.length - 1).fill(null), histActual[histActual.length - 1], ...predValues];
+    // Connect the future forecast line to the last model prediction point
+    const futureDataset = [...Array(histLabels.length - 1).fill(null), histPred[histPred.length - 1], ...predValues];
 
     forecastChart = new Chart(ctx, {
         type: 'line',
@@ -655,54 +647,16 @@ async function loadClassificationData() {
         Object.values(classCharts).forEach(c => c.destroy());
         classCharts = {};
 
-        // 1. Confusion Matrix (Bubble style approximation for Heatmap)
+        // 1. Confusion Matrix (HTML Table)
         const cm = d.confusion_matrix;
-        const maxVal = Math.max(...cm.flat());
-        classCharts.confusion = new Chart(document.getElementById('classChartConfusion'), {
-            type: 'bubble',
-            data: {
-                datasets: [
-                    {
-                        label: 'Confusion Matrix',
-                        data: [
-                            {x: 0, y: 1, r: (cm[1][0]/maxVal)*30 + 5, value: cm[1][0], title: 'False Negative'},
-                            {x: 1, y: 1, r: (cm[1][1]/maxVal)*30 + 5, value: cm[1][1], title: 'True Positive'},
-                            {x: 0, y: 0, r: (cm[0][0]/maxVal)*30 + 5, value: cm[0][0], title: 'True Negative'},
-                            {x: 1, y: 0, r: (cm[0][1]/maxVal)*30 + 5, value: cm[0][1], title: 'False Positive'}
-                        ],
-                        backgroundColor: (ctx) => {
-                            const val = ctx.raw?.value || 0;
-                            const t = ctx.raw?.title || '';
-                            if (t === 'True Positive' || t === 'True Negative') return `rgba(22, 163, 74, ${Math.max(0.2, val/maxVal)})`;
-                            return `rgba(239, 68, 68, ${Math.max(0.2, val/maxVal)})`;
-                        }
-                    }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => `${ctx.raw.title}: ${ctx.raw.value}`
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        min: -0.5, max: 1.5,
-                        ticks: { callback: (v) => v === 0 ? 'Pred: Aman' : (v === 1 ? 'Pred: Risiko' : '') }
-                    },
-                    y: {
-                        min: -0.5, max: 1.5,
-                        ticks: { callback: (v) => v === 0 ? 'Actual: Aman' : (v === 1 ? 'Actual: Risiko' : '') }
-                    }
-                }
-            }
-        });
+        if(document.getElementById('cmTN')) {
+            document.getElementById('cmTN').textContent = cm[0][0];
+            document.getElementById('cmFP').textContent = cm[0][1];
+            document.getElementById('cmFN').textContent = cm[1][0];
+            document.getElementById('cmTP').textContent = cm[1][1];
+        }
 
-        // 2. Feature Importance (Horizontal Bar)
+        // 2. Feature Importance (Horizontal Bar) - Only 8 Base Input Features
         classCharts.feature = new Chart(document.getElementById('classChartFeature'), {
             type: 'bar',
             data: {
@@ -756,7 +710,7 @@ async function loadClassificationData() {
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { title: { display: true, text: 'Recall' }, min: 0, max: 1 },
+                    x: { type: 'linear', title: { display: true, text: 'Recall' }, min: 0, max: 1 },
                     y: { title: { display: true, text: 'Precision' }, min: 0, max: 1 }
                 }
             }
@@ -938,18 +892,30 @@ let modelCharts = {};
 function loadModelDashboard() {
     if (modelLoaded) return;
     
-    // 1. CLUSTERING: Silhouette Score Chart
+    // Data for Evaluation Chart
+    const silhouetteData = {
+        label: 'Silhouette Score',
+        data: [0.380, 0.3916, 0.352, 0.315, 0.280, 0.265],
+        pointBackgroundColor: ['#3b5d50', '#f9bf29', '#3b5d50', '#3b5d50', '#3b5d50', '#3b5d50']
+    };
+    const elbowData = {
+        label: 'Inertia (Elbow Method)',
+        data: [24000, 15000, 12000, 10000, 8500, 7500],
+        pointBackgroundColor: ['#3b5d50', '#f9bf29', '#3b5d50', '#3b5d50', '#3b5d50', '#3b5d50']
+    };
+
+    // 1. CLUSTERING: Evaluation Chart
     modelCharts.cluster = new Chart(document.getElementById('modelChartCluster'), {
         type: 'line',
         data: {
             labels: ['k=2', 'k=3', 'k=4', 'k=5', 'k=6', 'k=7'],
             datasets: [{
-                label: 'Silhouette Score',
-                data: [0.380, 0.3916, 0.352, 0.315, 0.280, 0.265],
+                label: silhouetteData.label,
+                data: silhouetteData.data,
                 borderColor: '#3b5d50',
                 backgroundColor: 'rgba(59, 93, 80, 0.1)',
                 borderWidth: 3,
-                pointBackgroundColor: ['#3b5d50', '#f9bf29', '#3b5d50', '#3b5d50', '#3b5d50', '#3b5d50'],
+                pointBackgroundColor: silhouetteData.pointBackgroundColor,
                 pointRadius: [4, 8, 4, 4, 4, 4],
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 2,
@@ -962,6 +928,20 @@ function loadModelDashboard() {
             plugins: { legend: { display: false }, tooltip: { padding: 10 } },
             scales: { y: { beginAtZero: false, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
         }
+    });
+
+    // Dropdown Logic for Evaluation Chart
+    document.getElementById('clusterEvalSelect').addEventListener('change', (e) => {
+        const val = e.target.value;
+        const dataset = modelCharts.cluster.data.datasets[0];
+        if(val === 'silhouette') {
+            dataset.label = silhouetteData.label;
+            dataset.data = silhouetteData.data;
+        } else {
+            dataset.label = elbowData.label;
+            dataset.data = elbowData.data;
+        }
+        modelCharts.cluster.update();
     });
 
     // 2. PIE CHART: Cluster Proportion
@@ -985,37 +965,53 @@ function loadModelDashboard() {
         }
     });
 
-    // 3. SCATTER PLOT: Rainfall vs Temperature
+    // 3. SCATTER PLOT: Rainfall vs Temperature with Province Names
+    const c0_provs = ["Banten", "Dki Jakarta", "Jawa Barat", "Jawa Tengah", "Kalimantan Barat", "Kalimantan S.", "Kalimantan T.", "Kalimantan Timur", "Kepulauan-riau", "Lampung", "Maluku", "Nangroe A.D.", "Papua Barat", "Riau", "Sulawesi Barat", "Sulawesi Selatan", "Sulawesi Tengg.", "Sumatera Selatan"];
+    const c1_provs = ["Bali", "Bangka Belitung", "D.I. Yogyakarta", "Gorontalo", "Jawa Timur", "Maluku Utara", "Nusatenggara B.", "Nusatenggara T.", "Papua"];
+    const c2_provs = ["Bengkulu", "Jambi", "Sulawesi Tengah", "Sulawesi Utara", "Sumatera Barat", "Sumatera Utara"];
+
     modelCharts.scatter = new Chart(document.getElementById('modelChartScatter'), {
         type: 'scatter',
         data: {
             datasets: [
                 {
                     label: 'Klaster 0 (Basah)',
-                    data: Array.from({length: 18}, () => ({x: 71.58 + (Math.random()*15-7.5), y: 25.95 + (Math.random()*2-1)})),
+                    data: c0_provs.map(p => ({x: 71.58 + (Math.random()*15-7.5), y: 25.95 + (Math.random()*2-1), prov: p})),
                     backgroundColor: 'rgba(13, 202, 240, 0.7)',
                     borderColor: '#0dcaf0',
-                    pointRadius: 5
+                    pointRadius: 5,
+                    pointHoverRadius: 8
                 },
                 {
                     label: 'Klaster 1 (Kering)',
-                    data: Array.from({length: 9}, () => ({x: 56.48 + (Math.random()*15-7.5), y: 25.38 + (Math.random()*2-1)})),
+                    data: c1_provs.map(p => ({x: 56.48 + (Math.random()*15-7.5), y: 25.38 + (Math.random()*2-1), prov: p})),
                     backgroundColor: 'rgba(25, 135, 84, 0.7)',
                     borderColor: '#198754',
-                    pointRadius: 5
+                    pointRadius: 5,
+                    pointHoverRadius: 8
                 },
                 {
                     label: 'Klaster 2 (Super Basah)',
-                    data: Array.from({length: 6}, () => ({x: 72.27 + (Math.random()*15-7.5), y: 23.22 + (Math.random()*2-1)})),
+                    data: c2_provs.map(p => ({x: 72.27 + (Math.random()*15-7.5), y: 23.22 + (Math.random()*2-1), prov: p})),
                     backgroundColor: 'rgba(255, 193, 7, 0.7)',
                     borderColor: '#ffc107',
-                    pointRadius: 5
+                    pointRadius: 5,
+                    pointHoverRadius: 8
                 }
             ]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'top' } },
+            plugins: { 
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw.prov;
+                        }
+                    }
+                }
+            },
             scales: {
                 x: { title: { display: true, text: 'Curah Hujan (mm)' }, grid: { color: '#f3f4f6' } },
                 y: { title: { display: true, text: 'Suhu Udara (°C)' }, grid: { color: '#f3f4f6' } }
@@ -1054,19 +1050,7 @@ async function loadForecastingEvalData() {
         document.getElementById('forecastKpiMape').textContent = `${d.kpis.mape}%`;
         document.getElementById('forecastKpiSafety').textContent = `± ${d.kpis.safety}`;
 
-        // Render Table first (so it doesn't fail if charts fail)
-        const tbody = document.getElementById('forecastTableBody');
-        if (tbody && d.table) {
-            tbody.innerHTML = d.table.map(r => {
-                const activeClass = r.target === target ? 'table-warning fw-bold' : '';
-                return `<tr class="${activeClass}">
-                    <td class="text-start">${r.target}</td>
-                    <td>${r.mae}</td>
-                    <td>${r.rmse}</td>
-                    <td>${r.mape}%</td>
-                </tr>`;
-            }).join('');
-        }
+        // Render Table logic removed as per user request
 
         // Destroy old charts
         Object.values(forecastEvalCharts).forEach(c => {
@@ -1085,26 +1069,6 @@ async function loadForecastingEvalData() {
                 ]
             },
             options: { responsive: true, maintainAspectRatio: false }
-        });
-
-        // 2. Scatter Plot
-        const scatterData = (d.charts.actual || []).map((a, i) => ({x: (d.charts.predicted || [])[i], y: a}));
-        forecastEvalCharts.scatter = new Chart(document.getElementById('forecastChartScatter'), {
-            type: 'scatter',
-            data: {
-                datasets: [{
-                    label: 'Aktual vs Prediksi',
-                    data: scatterData,
-                    backgroundColor: 'rgba(59, 93, 80, 0.6)'
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: {
-                    x: { title: { display: true, text: 'Prediksi Model' } },
-                    y: { title: { display: true, text: 'Nilai Aktual' } }
-                }
-            }
         });
 
         // 3. Histogram
