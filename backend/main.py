@@ -9,6 +9,7 @@ from scripts.etl_seeder import run_etl
 
 import shared
 import core.config as config
+from ml import loader as ml_loader
 from routers.eda import router as eda_router
 from routers.map import router as map_router
 from routers.forecast import router as forecast_router
@@ -52,6 +53,7 @@ def load_resources():
     classifier_path = os.path.join(config.MODEL_DIR, "agriva_master_classifier.pkl")
     if os.path.exists(classifier_path):
         shared.ews_pipeline = __import__('joblib').load(classifier_path)
+        ml_loader.ews_pipeline = shared.ews_pipeline
         print("[OK] EWS Pipeline loaded successfully!")
     else:
         print(f"[WARN] EWS Pipeline not found at {classifier_path}")
@@ -59,6 +61,7 @@ def load_resources():
     forecast_path = os.path.join(config.MODEL_DIR, "agriva_master_forecaster.pkl")
     if os.path.exists(forecast_path):
         shared.forecast_model = __import__('joblib').load(forecast_path)
+        ml_loader.forecast_model = shared.forecast_model
         print("[OK] Forecast Model loaded successfully!")
     else:
         print(f"[WARN] Forecast Model not found at {forecast_path}")
