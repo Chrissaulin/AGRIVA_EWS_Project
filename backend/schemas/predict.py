@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class PredictionRequest(BaseModel):
@@ -11,7 +12,7 @@ class PredictionRequest(BaseModel):
     Soil_Moisture: float
     FPAR: float
     FPAR_zscore: float
-    month_extracted: int
+    month_extracted: Optional[int] = None
 
 
 class PredictionResponse(BaseModel):

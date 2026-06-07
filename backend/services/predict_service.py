@@ -43,7 +43,6 @@ def predict_ews_endpoint(request, db: Session) -> dict[str, Any]:
     last_row["Soil Moisture (gapfilled historical time series)"] = request.Soil_Moisture
     last_row["FPAR"] = request.FPAR
     last_row["FPAR - zscore"] = request.FPAR_zscore
-    last_row["month_extracted"] = request.month_extracted
 
     if ml_loader.ews_pipeline is None:
         raise RuntimeError("EWS Master Pipeline not loaded.")
