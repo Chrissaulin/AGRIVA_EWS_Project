@@ -7,11 +7,12 @@ from __future__ import annotations
 
 import pandas as pd
 
-from ml.loader import ews_pipeline
+import ml.loader as ml_loader
 
 
 def resolve_pipeline(cluster_id: int):
     """Return (pipeline, threshold) for the given cluster."""
+    ews_pipeline = ml_loader.ews_pipeline
     if not isinstance(ews_pipeline, dict):
         return ews_pipeline, 0.5
 

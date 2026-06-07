@@ -9,6 +9,7 @@ from typing import Any
 import pandas as pd
 
 import core.config as config
+import ml.loader as ml_loader
 import models
 from repositories.province_repo import ProvinceRepository
 from repositories.simulation_repo import SimulationSessionRepository
@@ -28,7 +29,6 @@ def predict_ews_endpoint(request, db: Session) -> dict[str, Any]:
         request = PredictionRequest(**request)
 
     cluster_id = config.CLUSTER_MAP.get(request.province, 0)
-    from ml.loader import ews_pipeline
 
     df_prov = get_province_dataframe_with_features(request.province, db)
     if df_prov.empty:
@@ -45,14 +45,14 @@ def predict_ews_endpoint(request, db: Session) -> dict[str, Any]:
     last_row["FPAR - zscore"] = request.FPAR_zscore
     last_row["month_extracted"] = request.month_extracted
 
-    if ews_pipeline is None:
+    if ml_loader.ews_pipeline is None:
         raise RuntimeError("EWS Master Pipeline not loaded.")
 
     ews_result = predict_ews(
         cluster_id=cluster_id,
         features_df=pd.DataFrame([last_row]).fillna(0),
         threshold=None,
-        pipeline_override=ews_pipeline if not isinstance(ews_pipeline, dict) else None,
+        pipeline_override=ml_loader.ews_pipeline if not isinstance(ml_loader.ews_pipeline, dict) else None,
     )
     threshold = ews_result["threshold"]
 
@@ -92,10 +92,9 @@ def forecast_predict(province: str, steps: int, db: Session) -> dict[str, Any]:
     """
     Handle /api/forecast/predict logic.
     """
-    from ml.loader import forecast_model
     import numpy as np
 
-    if forecast_model is None:
+    if ml_loader.forecast_model is None:
         raise RuntimeError("Forecast model not loaded.")
 
     if province not in config.PROVINCES_LIST:
@@ -111,10 +110,10 @@ def forecast_predict(province: str, steps: int, db: Session) -> dict[str, Any]:
     prov_data = df_prov.sort_values("date").tail(100).copy()
     cluster_id = config.CLUSTER_MAP.get(province, 0)
 
-    if cluster_id not in forecast_model:
+    if cluster_id not in ml_loader.forecast_model:
         raise ValueError(f"Forecast model for cluster {cluster_id} not found.")
 
-    cluster_models = forecast_model[cluster_id]
+    cluster_models = ml_loader.forecast_model[cluster_id]
     predictions: list[dict] = []
 
     for step in range(steps):

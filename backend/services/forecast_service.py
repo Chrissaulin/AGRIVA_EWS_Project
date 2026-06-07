@@ -7,7 +7,7 @@ from __future__ import annotations
 import pandas as pd
 from sqlalchemy.orm import Session
 
-from ml.loader import ews_pipeline, forecast_model
+import ml.loader as ml_loader
 from ml.predictor import EWSPredictor
 from repositories.forecast_repo import (
     ForecastBatchRepository,
@@ -32,7 +32,7 @@ def execute_batch_forecast(batch_id: int) -> None:
     db.commit()
 
     try:
-        if forecast_model is None or ews_pipeline is None:
+        if ml_loader.forecast_model is None or ml_loader.ews_pipeline is None:
             raise RuntimeError(
                 "Models not loaded. Ensure classifier/forecaster exist in models_output."
             )
@@ -43,10 +43,10 @@ def execute_batch_forecast(batch_id: int) -> None:
         total_processed = 0
         for prov in provinces:
             cluster_id = prov.cluster_wilayah
-            if cluster_id not in forecast_model:
+            if cluster_id not in ml_loader.forecast_model:
                 continue
 
-            cluster_models = forecast_model[cluster_id]
+            cluster_models = ml_loader.forecast_model[cluster_id]
             df_prov = get_province_dataframe_with_features(prov.name, db)
             if df_prov.empty:
                 continue
