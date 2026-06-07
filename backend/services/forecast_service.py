@@ -7,12 +7,16 @@ from __future__ import annotations
 import pandas as pd
 from sqlalchemy.orm import Session
 
+from ml.loader import ews_pipeline, forecast_model
+from ml.predictor import EWSPredictor
 from repositories.forecast_repo import (
     ForecastBatchRepository,
     ForecastFeatureRepository,
     EWSForecastResultRepository,
 )
 from repositories.province_repo import ProvinceRepository
+from services.ews_service import resolve_pipeline
+from services.feature_engineering import get_province_dataframe_with_features
 
 
 def execute_batch_forecast(batch_id: int) -> None:
@@ -115,9 +119,10 @@ def execute_batch_forecast(batch_id: int) -> None:
                 pipeline, threshold = resolve_pipeline(cluster_id)
                 f_cols = list(pipeline.feature_names_in_)
                 features_df = pd.DataFrame([new_row]).reindex(columns=f_cols, fill_value=0)
-                ews_res = predict_ews(cluster_id, features_df, threshold=threshold, pipeline_override=pipeline)
+                ews_res = EWSPredictor.predict(pipeline, features_df, threshold=threshold)
 
-                res_record = models.EWSForecastResult(
+                res_repo = EWSForecastResultRepository(db)
+                res_repo.create(
                     province_id=prov.id,
                     batch_id=batch_id,
                     forecast_date=next_date.date(),
@@ -125,7 +130,6 @@ def execute_batch_forecast(batch_id: int) -> None:
                     ews_label=ews_res["ews_label"],
                     ews_probability=ews_res["ews_probability"],
                 )
-                db.add(res_record)
 
                 prov_data = pd.concat([prov_data, pd.DataFrame([new_row])], ignore_index=True)
 

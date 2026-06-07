@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from shared import ews_pipeline
+from ml.loader import ews_pipeline
 
 
 def resolve_pipeline(cluster_id: int):

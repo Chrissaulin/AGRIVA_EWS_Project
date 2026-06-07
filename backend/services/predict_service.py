@@ -12,8 +12,9 @@ import core.config as config
 import models
 from repositories.province_repo import ProvinceRepository
 from repositories.simulation_repo import SimulationSessionRepository
-from services.ews_service import predict_ews
-from shared import get_province_dataframe_with_features
+from ml.predictor import EWSPredictor
+from services.ews_service import resolve_pipeline
+from services.feature_engineering import get_province_dataframe_with_features
 from sqlalchemy.orm import Session
 
 
@@ -44,7 +45,7 @@ def predict_ews_endpoint(request, db: Session) -> dict[str, Any]:
     last_row["FPAR - zscore"] = request.FPAR_zscore
     last_row["month_extracted"] = request.month_extracted
 
-    from shared import ews_pipeline
+    from ml.loader import ews_pipeline
 
     if ews_pipeline is None:
         raise RuntimeError("EWS Master Pipeline not loaded.")
@@ -65,7 +66,7 @@ def predict_ews_endpoint(request, db: Session) -> dict[str, Any]:
 
     feature_cols = list(pipeline.feature_names_in_)
     features = pd.DataFrame([last_row])[feature_cols].fillna(0)
-    ews_result = predict_ews(cluster_id, features, threshold=threshold, pipeline_override=pipeline)
+    ews_result = EWSPredictor.predict(pipeline, features, threshold=threshold)
 
     try:
         repo = ProvinceRepository(db)
@@ -103,7 +104,7 @@ def forecast_predict(province: str, steps: int, db: Session) -> dict[str, Any]:
     """
     Handle /api/forecast/predict logic.
     """
-    from shared import forecast_model
+    from ml.loader import forecast_model
     import numpy as np
 
     if forecast_model is None:
