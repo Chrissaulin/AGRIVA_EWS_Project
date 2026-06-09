@@ -4,7 +4,10 @@ Contains execute_batch_forecast (BackgroundTasks job) and batch orchestration.
 """
 from __future__ import annotations
 
+from collections import defaultdict
+
 import pandas as pd
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 import ml.loader as ml_loader
@@ -13,13 +16,41 @@ from repositories.forecast_repo import (
     ForecastBatchRepository,
     ForecastFeatureRepository,
     EWSForecastResultRepository,
+    ForecastMonthlyRepository,
 )
 from repositories.province_repo import ProvinceRepository
 from services.ews_service import resolve_pipeline
 from services.feature_engineering import get_province_dataframe_with_features
 
 
-def execute_batch_forecast(batch_id: int) -> None:
+def _to_monthly_records(rows: list[dict]) -> list[dict]:
+    grouped: dict[tuple[int, int], list[dict]] = defaultdict(list)
+    for row in rows:
+        grouped[(row["year"], row["month"])].append(row)
+
+    monthly: list[dict] = []
+    for (year, month), group in sorted(grouped.items()):
+        latest_date = max(row["forecast_date"] for row in group)
+        monthly.append({
+            "month": month,
+            "year": year,
+            "forecast_date": latest_date,
+            "rainfall": sum(row["rainfall"] or 0 for row in group) / max(len(group), 1),
+            "spi_3_months": sum(row["spi_3_months"] or 0 for row in group) / max(len(group), 1),
+            "temperature": sum(row["temperature"] or 0 for row in group) / max(len(group), 1),
+            "wsi": sum(row["wsi"] or 0 for row in group) / max(len(group), 1),
+            "solar_radiation": sum(row["solar_radiation"] or 0 for row in group) / max(len(group), 1),
+            "soil_moisture": sum(row["soil_moisture"] or 0 for row in group) / max(len(group), 1),
+            "fpar": sum(row["fpar"] or 0 for row in group) / max(len(group), 1),
+            "fpar_zscore": sum(row["fpar_zscore"] or 0 for row in group) / max(len(group), 1),
+            "ews_label": max({label: group.count(label) for label in {row["ews_label"] for row in group}}.items(), key=lambda item: item[1])[0],
+            "ews_probability": sum(row["ews_probability"] for row in group) / max(len(group), 1),
+            "dekad_count": len(group),
+        })
+    return monthly
+
+
+def execute_batch_forecast(batch_id: int, months_ahead: int | None = None) -> None:
     from database import SessionLocal
 
     db = SessionLocal()
@@ -27,6 +58,11 @@ def execute_batch_forecast(batch_id: int) -> None:
     if not batch:
         db.close()
         return
+
+    if months_ahead is None:
+        months_ahead = batch.months_ahead
+
+    monthly_repo = ForecastMonthlyRepository(db)
 
     batch.status = "running"
     db.commit()
@@ -38,7 +74,7 @@ def execute_batch_forecast(batch_id: int) -> None:
             )
 
         provinces = db.query(models.Province).all()
-        steps = batch.months_ahead * 3
+        steps = months_ahead * 3
 
         total_processed = 0
         for prov in provinces:
@@ -52,6 +88,7 @@ def execute_batch_forecast(batch_id: int) -> None:
                 continue
 
             prov_data = df_prov.sort_values("date").tail(100).copy()
+            dekad_records: list[dict] = []
 
             for step in range(steps):
                 last_date = pd.to_datetime(prov_data["date"].iloc[-1])
@@ -69,8 +106,7 @@ def execute_batch_forecast(batch_id: int) -> None:
                 new_row["dayofyear"] = next_date.dayofyear
                 new_row["weekofyear"] = next_date.isocalendar()[1]
 
-                lag_targets = config.TARGET_FORECAST_COLS
-                for t in lag_targets:
+                for t in config.TARGET_FORECAST_COLS:
                     if len(prov_data) >= 1:
                         val1 = prov_data[t].iloc[-1]
                         new_row[f"{t}_lag_1"] = val1
@@ -86,7 +122,7 @@ def execute_batch_forecast(batch_id: int) -> None:
                     if len(prov_data) >= 6:
                         new_row[f"{t}_lag_6"] = prov_data[t].iloc[-6]
 
-                pred_dict = {}
+                pred_dict: dict[str, float] = {}
                 for target in config.TARGET_FORECAST_COLS:
                     if target in cluster_models:
                         m = cluster_models[target]
@@ -96,18 +132,27 @@ def execute_batch_forecast(batch_id: int) -> None:
                         pred_dict[target] = pred_val
                         new_row[target] = pred_val
 
+                rainfall = pred_dict.get("Rainfall")
+                spi_3_months = pred_dict.get("SPI - 3 months")
+                temperature = pred_dict.get("Temperature")
+                wsi = pred_dict.get("Water Satisfaction Index (WSI)")
+                solar_radiation = pred_dict.get("Solar Radiation")
+                soil_moisture = pred_dict.get("Soil Moisture (gapfilled historical time series)")
+                fpar = pred_dict.get("FPAR")
+                fpar_zscore = pred_dict.get("FPAR - zscore")
+
                 feat_record = models.ForecastFeature(
                     province_id=prov.id,
                     batch_id=batch_id,
                     forecast_date=next_date.date(),
-                    rainfall=pred_dict.get("Rainfall"),
-                    spi_3_months=pred_dict.get("SPI - 3 months"),
-                    temperature=pred_dict.get("Temperature"),
-                    wsi=pred_dict.get("Water Satisfaction Index (WSI)"),
-                    solar_radiation=pred_dict.get("Solar Radiation"),
-                    soil_moisture=pred_dict.get("Soil Moisture (gapfilled historical time series)"),
-                    fpar=pred_dict.get("FPAR"),
-                    fpar_zscore=pred_dict.get("FPAR - zscore"),
+                    rainfall=rainfall,
+                    spi_3_months=spi_3_months,
+                    temperature=temperature,
+                    wsi=wsi,
+                    solar_radiation=solar_radiation,
+                    soil_moisture=soil_moisture,
+                    fpar=fpar,
+                    fpar_zscore=fpar_zscore,
                     month=next_date.month,
                     year=next_date.year,
                     dekad_id=new_row["dekad_id"],
@@ -115,7 +160,6 @@ def execute_batch_forecast(batch_id: int) -> None:
                 db.add(feat_record)
                 db.flush()
 
-                # EWS prediction on the forecasted features
                 pipeline, threshold = resolve_pipeline(cluster_id)
                 f_cols = list(pipeline.feature_names_in_)
                 features_df = pd.DataFrame([new_row]).reindex(columns=f_cols, fill_value=0)
@@ -131,7 +175,31 @@ def execute_batch_forecast(batch_id: int) -> None:
                     ews_probability=ews_res["ews_probability"],
                 )
 
+                dekad_records.append({
+                    "province_id": prov.id,
+                    "batch_id": batch_id,
+                    "forecast_date": next_date.date(),
+                    "month": next_date.month,
+                    "year": next_date.year,
+                    "rainfall": rainfall,
+                    "spi_3_months": spi_3_months,
+                    "temperature": temperature,
+                    "wsi": wsi,
+                    "solar_radiation": solar_radiation,
+                    "soil_moisture": soil_moisture,
+                    "fpar": fpar,
+                    "fpar_zscore": fpar_zscore,
+                    "ews_label": ews_res["ews_label"],
+                    "ews_probability": ews_res["ews_probability"],
+                })
+
                 prov_data = pd.concat([prov_data, pd.DataFrame([new_row])], ignore_index=True)
+
+            monthly_records = _to_monthly_records(dekad_records)
+            for rec in monthly_records:
+                rec["province_id"] = prov.id
+                rec["batch_id"] = batch_id
+                monthly_repo.upsert(**rec)
 
             total_processed += 1
 

@@ -71,3 +71,36 @@ class EWSForecastResultRepository:
             .filter(models.EWSForecastResult.batch_id == batch_id)
             .all()
         )
+
+
+class ForecastMonthlyRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def upsert(self, **kwargs) -> models.ForecastMonthly:
+        """Merge to avoid duplicate key errors on re-runs."""
+        record = models.ForecastMonthly(**kwargs)
+        self.db.merge(record)
+        self.db.flush()
+        return record
+
+    def get_by_batch_and_period(self, batch_id: int, month: int = None, year: int = None) -> list[models.ForecastMonthly]:
+        query = self.db.query(models.ForecastMonthly).filter(
+            models.ForecastMonthly.batch_id == batch_id
+        )
+        if month is not None:
+            query = query.filter(models.ForecastMonthly.month == month)
+        if year is not None:
+            query = query.filter(models.ForecastMonthly.year == year)
+        return query.all()
+
+    def get_latest_by_province(self, province_id: int, batch_id: int):
+        return (
+            self.db.query(models.ForecastMonthly)
+            .filter(
+                models.ForecastMonthly.province_id == province_id,
+                models.ForecastMonthly.batch_id == batch_id,
+            )
+            .order_by(models.ForecastMonthly.year.asc(), models.ForecastMonthly.month.asc())
+            .all()
+        )

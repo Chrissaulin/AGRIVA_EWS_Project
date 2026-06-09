@@ -26,6 +26,7 @@ class Province(Base):
     forecast_features    = relationship("ForecastFeature",    back_populates="province")
     ews_results          = relationship("EWSForecastResult",  back_populates="province")
     simulations          = relationship("SimulationSession",  back_populates="province")
+    forecast_monthlies   = relationship("ForecastMonthly",    back_populates="province")
 
 
 class HistoricalMetric(Base):
@@ -75,8 +76,9 @@ class ForecastBatch(Base):
     notes            = Column(Text, nullable=True)
 
     # Relationships
-    forecast_features = relationship("ForecastFeature",   back_populates="batch")
-    ews_results       = relationship("EWSForecastResult", back_populates="batch")
+    forecast_features   = relationship("ForecastFeature",   back_populates="batch")
+    ews_results         = relationship("EWSForecastResult", back_populates="batch")
+    forecast_monthlies  = relationship("ForecastMonthly",   back_populates="batch")
 
 
 class ForecastFeature(Base):
@@ -138,6 +140,46 @@ class EWSForecastResult(Base):
 
     province = relationship("Province", back_populates="ews_results")
     batch    = relationship("ForecastBatch", back_populates="ews_results")
+
+
+class ForecastMonthly(Base):
+    """
+    Monthly-aggregated 6-month forecast for map interface.
+    Primary consumer: /api/ews-map and future forecast-map endpoints.
+    Replaces the dekad-level join pattern with a single optimized table.
+    """
+    __tablename__ = "forecast_monthly"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    province_id     = Column(Integer, ForeignKey("province.id"), nullable=False, index=True)
+    batch_id        = Column(Integer, ForeignKey("forecast_batch.id"), nullable=False, index=True)
+
+    month           = Column(Integer, nullable=False)   # 1-12
+    year            = Column(Integer, nullable=False)
+    forecast_date   = Column(Date, nullable=False)      # dekad date used for this month's aggregate
+
+    # Monthly-mean forecasted features (from model_forecast_global.pkl)
+    rainfall        = Column(Float, nullable=True)
+    spi_3_months    = Column(Float, nullable=True)
+    temperature     = Column(Float, nullable=True)
+    wsi             = Column(Float, nullable=True)
+    solar_radiation = Column(Float, nullable=True)
+    soil_moisture   = Column(Float, nullable=True)
+    fpar            = Column(Float, nullable=True)
+    fpar_zscore     = Column(Float, nullable=True)
+
+    # EWS classification (majority vote + mean probability across dekads in month)
+    ews_label       = Column(Integer, nullable=False)   # 0 or 1
+    ews_probability = Column(Float, nullable=False)
+    dekad_count     = Column(Integer, nullable=False, default=0)  # how many dekads rolled up
+
+    __table_args__ = (
+        UniqueConstraint("province_id", "batch_id", "month", "year",
+                         name="_fm_province_batch_month_year_uc"),
+    )
+
+    province = relationship("Province", back_populates="forecast_monthlies")
+    batch    = relationship("ForecastBatch", back_populates="forecast_monthlies")
 
 
 class SimulationSession(Base):
