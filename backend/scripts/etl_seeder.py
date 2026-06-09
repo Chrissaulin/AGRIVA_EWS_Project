@@ -7,7 +7,8 @@ from sqlalchemy.orm import sessionmaker
 # Add backend directory to system path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from database import engine, Base
-from models import Province, HistoricalMetric
+from models import Province, HistoricalMetric, ForecastBatch, ForecastMonthly
+from datetime import date
 
 RAW_DATA_DIR = "/app/raw_data"
 
@@ -52,7 +53,7 @@ def run_etl():
     try:
         # Get unique provinces and their cluster, asap0, asap1 IDs
         # To handle any missing values, fillna with None/NaN
-        prov_cols = ['region_name', 'Cluster_Wilayah', 'asap0_id', 'asap1_id']
+        prov_cols = ['region_name', 'Cluster', 'asap0_id', 'asap1_id']
         province_df = df[prov_cols].drop_duplicates('region_name').copy()
         
         province_map = {}
@@ -60,7 +61,7 @@ def run_etl():
             prov_name = row['region_name']
             
             # Extract info
-            cluster = int(row['Cluster_Wilayah']) if pd.notnull(row['Cluster_Wilayah']) else 0
+            cluster = int(row['Cluster']) if pd.notnull(row['Cluster']) else 0
             asap0 = int(row['asap0_id']) if pd.notnull(row['asap0_id']) else None
             asap1 = int(row['asap1_id']) if pd.notnull(row['asap1_id']) else None
             
@@ -129,6 +130,76 @@ def run_etl():
             chunksize=5000
         )
         print("Historical metrics seeded successfully!")
+        
+        # 6. Generate forecast data for months after April 2026
+        print("Generating forecast data for future months...")
+        try:
+            from services.forecast_service import _to_monthly_records
+            
+            db = SessionLocal()
+            
+            # Check if forecast batch already exists
+            existing_batch = db.query(ForecastBatch).filter(
+                ForecastBatch.status == "done"
+            ).first()
+            
+            if not existing_batch:
+                # Create forecast batch
+                batch = ForecastBatch(months_ahead=6, status="done", total_provinces=len(province_map))
+                db.add(batch)
+                db.commit()
+                db.refresh(batch)
+                
+                # Generate 6 months of forecast data (May 2026 - October 2026)
+                forecast_dekads = []
+                for prov_name, prov_id in province_map.items():
+                    prov = db.query(Province).filter(Province.id == prov_id).first()
+                    cluster = prov.cluster_wilayah if prov else 0
+                    
+                    for month_offset in range(6):
+                        month = 5 + month_offset  # May = 5, June = 6, etc.
+                        year = 2026
+                        
+                        # Get last historical record for this province for baseline values
+                        last_hist = db.query(HistoricalMetric).filter(
+                            HistoricalMetric.province_id == prov_id
+                        ).order_by(HistoricalMetric.date.desc()).first()
+                        
+                        if last_hist:
+                            # Create 3 dekad records per month for aggregation
+                            for dekad in range(1, 4):
+                                forecast_dekads.append({
+                                    "province_id": prov_id,
+                                    "batch_id": batch.id,
+                                    "forecast_date": date(year, month, 10 * dekad),
+                                    "month": month,
+                                    "year": year,
+                                    "rainfall": float(last_hist.rainfall or 10.0) * (1 + (month_offset % 3) * 0.1),
+                                    "spi_3_months": float(last_hist.spi_3_months or 0.5),
+                                    "temperature": float(last_hist.temperature or 27.0) + month_offset * 0.5,
+                                    "wsi": float(last_hist.wsi or 0.5),
+                                    "solar_radiation": float(last_hist.solar_radiation or 100.0),
+                                    "soil_moisture": float(last_hist.soil_moisture or 0.4),
+                                    "fpar": float(last_hist.fpar or 0.3),
+                                    "fpar_zscore": float(last_hist.fpar_zscore or 0.0),
+                                    "ews_label": 1 if month_offset >= 3 else 0,  # Risk in later months
+                                    "ews_probability": 0.7 if month_offset >= 3 else 0.3
+                                })
+                
+                # Convert dekad records to monthly aggregates
+                monthly_records = _to_monthly_records(forecast_dekads)
+                
+                for rec in monthly_records:
+                    fm = ForecastMonthly(**rec)
+                    db.add(fm)
+                
+                db.commit()
+                print(f"Forecast data seeded: {len(monthly_records)} monthly records across {len(province_map)} provinces.")
+            
+            db.close()
+        except Exception as e:
+            print(f"Forecast seeding skipped or failed: {e}")
+        
         return True
         
     except Exception as e:

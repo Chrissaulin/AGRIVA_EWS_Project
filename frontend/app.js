@@ -172,7 +172,7 @@ async function loadMapData() {
                         };
                         layer.setStyle(customStyle);
                         layer.options.customStyle = customStyle;
-                        layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><span class="badge ${isRisk ? 'bg-danger' : 'bg-success'} mb-2">${info.warning}</span><div class="small text-muted">Cluster: ${info.cluster}<br>Curah Hujan: ${info.avg_rainfall} mm<br>Suhu: ${info.avg_temperature}°C<br>SPI-3: ${info.avg_spi}</div>`);
+                        layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><span class="badge ${isRisk ? 'bg-danger' : 'bg-success'} mb-2">${info.warning}</span><div class="small text-muted">Cluster: ${info.cluster}<br>Curah Hujan: ${info.avg_rainfall} mm<br>Suhu: ${info.avg_temperature}°C<br>SPI-3: ${info.avg_spi}${info.forecast_year ? '<br><em>Data Forecast</em>' : ''}</div>`);
                     } else if (matchCluster && !matchStatus) {
                         // Matches cluster, but fails status filter (Show as gray but keep data)
                         const grayStyle = { fillColor: '#9ca3af', color: '#6b7280', fillOpacity: 0.6, weight: 1.5 };

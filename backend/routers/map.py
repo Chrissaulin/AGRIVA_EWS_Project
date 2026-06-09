@@ -22,9 +22,20 @@ def map_filters(db: Session = Depends(get_db)):
 @router.get("/api/map/data")
 def map_data(year: Optional[str] = None, month: Optional[str] = None,
              mode: str = "historical", db: Session = Depends(get_db)):
+    year_int = int(year) if year and year != "" else None
+    month_int = int(month) if month and month != "" else None
+    
     if mode == "forecast":
-        return _map_data_forecast(db)
-    return _map_data_historical(year, month, db)
+        return _map_data_forecast(db, year_int, month_int)
+    
+    # Try historical first
+    result = _map_data_historical(year, month, db)
+    
+    # Auto-fallback to forecast if no historical data
+    if not result.get("provinces"):
+        result = _map_data_forecast(db, year_int, month_int)
+    
+    return result
 
 
 def _map_data_historical(year: Optional[str], month: Optional[str], db: Session):
@@ -92,7 +103,7 @@ def _map_data_historical(year: Optional[str], month: Optional[str], db: Session)
     return {"provinces": result, "year": year_val, "month": month_val}
 
 
-def _map_data_forecast(db: Session):
+def _map_data_forecast(db: Session, year: int = None, month: int = None):
     latest_batch = db.query(models.ForecastBatch).filter(
         models.ForecastBatch.status == "done"
     ).order_by(models.ForecastBatch.created_at.desc()).first()
@@ -100,16 +111,19 @@ def _map_data_forecast(db: Session):
     if not latest_batch:
         return {"provinces": [], "message": "No forecast data available."}
 
-    metrics = (
+    query = (
         db.query(models.Province, models.ForecastMonthly)
         .join(models.ForecastMonthly, models.ForecastMonthly.province_id == models.Province.id)
         .filter(models.ForecastMonthly.batch_id == latest_batch.id)
-        .order_by(models.ForecastMonthly.id.asc())
-        .all()
     )
+    if year is not None:
+        query = query.filter(models.ForecastMonthly.year == year)
+    if month is not None:
+        query = query.filter(models.ForecastMonthly.month == month)
+    metrics = query.order_by(models.ForecastMonthly.id.asc()).all()
 
     if not metrics:
-        return {"provinces": [], "message": "No forecast data available."}
+        return {"provinces": [], "message": "No forecast data available for the selected period."}
 
     result = []
     for prov, fm in metrics:
