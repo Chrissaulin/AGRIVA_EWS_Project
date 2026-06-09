@@ -9,3 +9,7 @@ __pycache__/
 # Mengabaikan log eksperimen MLflow
 mlruns/
 *.db
+
+# Kilo configuration (local only, not shared)
+.kilo/
+tmp/
