@@ -201,50 +201,52 @@ def get_ews_map(
 ):
     from fastapi import HTTPException
 
-    latest_batch = db.query(models.ForecastBatch).filter(models.ForecastBatch.status == "done").order_by(models.ForecastBatch.created_at.desc()).first()
+    latest_batch = db.query(models.ForecastBatch).filter(
+        models.ForecastBatch.status == "done"
+    ).order_by(models.ForecastBatch.created_at.desc()).first()
+
     if not latest_batch:
         return {"provinces": [], "message": "No forecast batch has completed successfully yet."}
 
     query = (
-        db.query(models.Province, models.ForecastFeature, models.EWSForecastResult)
-        .join(models.ForecastFeature, models.ForecastFeature.province_id == models.Province.id)
-        .join(models.EWSForecastResult, models.EWSForecastResult.province_id == models.Province.id)
-        .filter(models.ForecastFeature.batch_id == latest_batch.id)
-        .filter(models.EWSForecastResult.batch_id == latest_batch.id)
-        .filter(models.ForecastFeature.forecast_date == models.EWSForecastResult.forecast_date)
+        db.query(models.Province, models.ForecastMonthly)
+        .join(models.ForecastMonthly, models.ForecastMonthly.province_id == models.Province.id)
+        .filter(models.ForecastMonthly.batch_id == latest_batch.id)
     )
 
     if month is not None:
-        query = query.filter(models.ForecastFeature.month == month)
+        query = query.filter(models.ForecastMonthly.month == month)
     if year is not None:
-        query = query.filter(models.ForecastFeature.year == year)
+        query = query.filter(models.ForecastMonthly.year == year)
     if cluster is not None and cluster != "all":
         query = query.filter(models.Province.cluster_wilayah == int(cluster))
     if ews_label is not None:
-        query = query.filter(models.EWSForecastResult.ews_label == ews_label)
+        query = query.filter(models.ForecastMonthly.ews_label == ews_label)
 
     results = query.all()
 
     provinces_data = []
-    for prov, feat, res in results:
+    for prov, fm in results:
         provinces_data.append({
             "province_id": prov.id,
             "province_name": prov.name,
             "latitude": prov.latitude,
             "longitude": prov.longitude,
             "cluster_wilayah": prov.cluster_wilayah,
-            "forecast_date": feat.forecast_date.strftime('%Y-%m-%d'),
-            "rainfall": feat.rainfall,
-            "spi_3_months": feat.spi_3_months,
-            "temperature": feat.temperature,
-            "wsi": feat.wsi,
-            "solar_radiation": feat.solar_radiation,
-            "soil_moisture": feat.soil_moisture,
-            "fpar": feat.fpar,
-            "fpar_zscore": feat.fpar_zscore,
-            "ews_label": res.ews_label,
-            "ews_probability": res.ews_probability,
-            "cluster_used": res.cluster_used
+            "forecast_date": fm.forecast_date.strftime('%Y-%m-%d'),
+            "month": fm.month,
+            "year": fm.year,
+            "rainfall": fm.rainfall,
+            "spi_3_months": fm.spi_3_months,
+            "temperature": fm.temperature,
+            "wsi": fm.wsi,
+            "solar_radiation": fm.solar_radiation,
+            "soil_moisture": fm.soil_moisture,
+            "fpar": fm.fpar,
+            "fpar_zscore": fm.fpar_zscore,
+            "ews_label": fm.ews_label,
+            "ews_probability": fm.ews_probability,
+            "cluster_used": prov.cluster_wilayah,
         })
 
     return {"batch_id": latest_batch.id, "created_at": latest_batch.created_at, "provinces": provinces_data}
@@ -252,33 +254,37 @@ def get_ews_map(
 
 @router.get("/api/ews-map/provinces/{province_id}")
 def get_ews_map_province(province_id: int, db: Session = Depends(get_db)):
-    latest_batch = db.query(models.ForecastBatch).filter(models.ForecastBatch.status == "done").order_by(models.ForecastBatch.created_at.desc()).first()
+    from fastapi import HTTPException
+
+    latest_batch = db.query(models.ForecastBatch).filter(
+        models.ForecastBatch.status == "done"
+    ).order_by(models.ForecastBatch.created_at.desc()).first()
+
     if not latest_batch:
         raise HTTPException(status_code=404, detail="No forecast batch completed yet.")
 
     results = (
-        db.query(models.ForecastFeature, models.EWSForecastResult)
-        .filter(models.ForecastFeature.province_id == province_id)
-        .filter(models.ForecastFeature.batch_id == latest_batch.id)
-        .filter(models.EWSForecastResult.province_id == province_id)
-        .filter(models.EWSForecastResult.batch_id == latest_batch.id)
-        .filter(models.ForecastFeature.forecast_date == models.EWSForecastResult.forecast_date)
-        .order_by(models.ForecastFeature.forecast_date.asc())
+        db.query(models.ForecastMonthly)
+        .filter(models.ForecastMonthly.province_id == province_id)
+        .filter(models.ForecastMonthly.batch_id == latest_batch.id)
+        .order_by(models.ForecastMonthly.year.asc(), models.ForecastMonthly.month.asc())
         .all()
     )
 
     data = []
-    for feat, res in results:
+    for fm in results:
         data.append({
-            "forecast_date": feat.forecast_date.strftime('%Y-%m-%d'),
-            "rainfall": feat.rainfall,
-            "temperature": feat.temperature,
-            "wsi": feat.wsi,
-            "spi_3_months": feat.spi_3_months,
-            "soil_moisture": feat.soil_moisture,
-            "fpar": feat.fpar,
-            "ews_label": res.ews_label,
-            "ews_probability": res.ews_probability
+            "forecast_date": fm.forecast_date.strftime('%Y-%m-%d'),
+            "month": fm.month,
+            "year": fm.year,
+            "rainfall": fm.rainfall,
+            "temperature": fm.temperature,
+            "wsi": fm.wsi,
+            "spi_3_months": fm.spi_3_months,
+            "soil_moisture": fm.soil_moisture,
+            "fpar": fm.fpar,
+            "ews_label": fm.ews_label,
+            "ews_probability": fm.ews_probability,
         })
 
     return {"province_id": province_id, "latest_batch_id": latest_batch.id, "data": data}

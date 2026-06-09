@@ -20,7 +20,14 @@ def map_filters(db: Session = Depends(get_db)):
 
 
 @router.get("/api/map/data")
-def map_data(year: Optional[str] = None, month: Optional[str] = None, db: Session = Depends(get_db)):
+def map_data(year: Optional[str] = None, month: Optional[str] = None,
+             mode: str = "historical", db: Session = Depends(get_db)):
+    if mode == "forecast":
+        return _map_data_forecast(db)
+    return _map_data_historical(year, month, db)
+
+
+def _map_data_historical(year: Optional[str], month: Optional[str], db: Session):
     year_val = None if (year is None or year == "") else int(year)
     month_val = None if (month is None or month == "") else int(month)
 
@@ -52,8 +59,10 @@ def map_data(year: Optional[str] = None, month: Optional[str] = None, db: Sessio
             prov_groups[p_name] = []
         prov_groups[p_name].append(m)
 
+    province_names = [p[0] for p in db.query(models.Province.name).order_by(models.Province.name.asc()).all()]
+
     result = []
-    for prov in config.PROVINCES_LIST:
+    for prov in province_names:
         m_list = prov_groups.get(prov, [])
         if not m_list:
             continue
@@ -66,16 +75,55 @@ def map_data(year: Optional[str] = None, month: Optional[str] = None, db: Sessio
         avg_temp = round(float(np.mean([m.temperature for m in m_list if m.temperature is not None])), 2) if m_list else 0.0
         avg_spi = round(float(np.mean([m.spi_3_months for m in m_list if m.spi_3_months is not None])), 2) if m_list else 0.0
 
+        cluster = db.query(models.Province.cluster_wilayah).filter(models.Province.name == prov).scalar()
+
         result.append({
             "province": prov,
             "warning": "Berisiko" if has_risk == 1 else "Aman",
             "warning_code": has_risk,
             "risk_records": risk_count,
             "total_records": total_count,
-            "cluster": config.CLUSTER_MAP.get(prov, -1),
+            "cluster": int(cluster) if cluster is not None else -1,
             "avg_rainfall": avg_rainfall,
             "avg_temperature": avg_temp,
             "avg_spi": avg_spi,
         })
 
     return {"provinces": result, "year": year_val, "month": month_val}
+
+
+def _map_data_forecast(db: Session):
+    latest_batch = db.query(models.ForecastBatch).filter(
+        models.ForecastBatch.status == "done"
+    ).order_by(models.ForecastBatch.created_at.desc()).first()
+
+    if not latest_batch:
+        return {"provinces": [], "message": "No forecast data available."}
+
+    metrics = (
+        db.query(models.Province, models.ForecastMonthly)
+        .join(models.ForecastMonthly, models.ForecastMonthly.province_id == models.Province.id)
+        .filter(models.ForecastMonthly.batch_id == latest_batch.id)
+        .order_by(models.ForecastMonthly.id.asc())
+        .all()
+    )
+
+    if not metrics:
+        return {"provinces": [], "message": "No forecast data available."}
+
+    result = []
+    for prov, fm in metrics:
+        result.append({
+            "province": prov.name,
+            "warning": "Berisiko" if fm.ews_label == 1 else "Aman",
+            "warning_code": fm.ews_label,
+            "cluster": prov.cluster_wilayah,
+            "avg_rainfall": round(float(fm.rainfall), 2) if fm.rainfall is not None else 0.0,
+            "avg_temperature": round(float(fm.temperature), 2) if fm.temperature is not None else 0.0,
+            "avg_spi": round(float(fm.spi_3_months), 2) if fm.spi_3_months is not None else 0.0,
+            "forecast_month": fm.month,
+            "forecast_year": fm.year,
+            "forecast_date": fm.forecast_date.strftime('%Y-%m-%d'),
+        })
+
+    return {"provinces": result, "batch_id": latest_batch.id, "created_at": latest_batch.created_at}
