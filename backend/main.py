@@ -50,21 +50,22 @@ def load_resources():
     except Exception as e:
         print(f"[ERROR] Failed checking database state: {e}")
 
-    classifier_path = os.path.join(config.MODEL_DIR, "agriva_master_classifier.pkl")
-    if os.path.exists(classifier_path):
-        shared.ews_pipeline = __import__('joblib').load(classifier_path)
-        ml_loader.ews_pipeline = shared.ews_pipeline
+    # Load models using the loader module (handles filename variants)
+    shared.ews_pipeline = ml_loader.load_ews_pipeline()
+    shared.forecast_model = ml_loader.load_forecast_model()
+    
+    # Sync to ml_loader module cache
+    ml_loader.set_models(shared.ews_pipeline, shared.forecast_model)
+    
+    if shared.ews_pipeline is not None:
         print("[OK] EWS Pipeline loaded successfully!")
     else:
-        print(f"[WARN] EWS Pipeline not found at {classifier_path}")
+        print(f"[WARN] EWS Pipeline not found at {os.path.join(config.MODEL_DIR, 'agriva_master_classifier.pkl')}")
 
-    forecast_path = os.path.join(config.MODEL_DIR, "agriva_master_forecaster.pkl")
-    if os.path.exists(forecast_path):
-        shared.forecast_model = __import__('joblib').load(forecast_path)
-        ml_loader.forecast_model = shared.forecast_model
+    if shared.forecast_model is not None:
         print("[OK] Forecast Model loaded successfully!")
     else:
-        print(f"[WARN] Forecast Model not found at {forecast_path}")
+        print(f"[WARN] Forecast Model not found (tried both 'forecasting.pkl' and 'forecaster.pkl')")
 
     try:
         db = SessionLocal()

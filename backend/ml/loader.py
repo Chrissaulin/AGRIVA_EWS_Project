@@ -9,7 +9,9 @@ from typing import Any
 
 import joblib
 
-from shared import ews_pipeline, forecast_model
+# Module-level cache for models (set at app startup)
+ews_pipeline: Any = None
+forecast_model: Any = None
 
 
 def get_model_dir() -> str:
@@ -26,13 +28,19 @@ def load_ews_pipeline(path: str | None = None) -> Any:
 
 def load_forecast_model(path: str | None = None) -> Any:
     if path is None:
-        path = os.path.join(get_model_dir(), "agriva_master_forecaster.pkl")
-    if os.path.exists(path):
+        # Try both filename variants (notebook uses 'forecasting', code expects 'forecaster')
+        for name in ["agriva_master_forecasting.pkl", "agriva_master_forecaster.pkl"]:
+            p = os.path.join(get_model_dir(), name)
+            if os.path.exists(p):
+                path = p
+                break
+    if path and os.path.exists(path):
         return joblib.load(path)
     return None
 
 
-def init_shared_state() -> None:
+def set_models(ews_pipeline_obj: Any, forecast_model_obj: Any) -> None:
+    """Update module-level cache (called at app startup)."""
     global ews_pipeline, forecast_model
-    ews_pipeline = load_ews_pipeline()
-    forecast_model = load_forecast_model()
+    ews_pipeline = ews_pipeline_obj
+    forecast_model = forecast_model_obj

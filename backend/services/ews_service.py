@@ -16,10 +16,15 @@ def resolve_pipeline(cluster_id: int):
     if not isinstance(ews_pipeline, dict):
         return ews_pipeline, 0.5
 
-    cluster_dict = ews_pipeline.get(cluster_id, {})
-    if isinstance(cluster_dict, dict) and "model_xgboost" in cluster_dict:
-        return cluster_dict["model_xgboost"], cluster_dict.get("threshold_siaga", 0.5)
-    return cluster_dict, 0.5
+    cluster_dict = ews_pipeline.get(cluster_id)
+    if cluster_dict is None:
+        raise ValueError(f"EWS model for cluster {cluster_id} not found in pipeline.")
+
+    # Model bundle uses 'model_object' key (created in notebook Cell 6)
+    if isinstance(cluster_dict, dict) and "model_object" in cluster_dict:
+        return cluster_dict["model_object"], cluster_dict.get("operational_threshold", 0.5)
+
+    raise ValueError(f"Invalid cluster model structure for cluster {cluster_id}. Expected 'model_object' key.")
 
 
 def predict_ews(

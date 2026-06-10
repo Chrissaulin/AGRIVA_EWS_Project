@@ -5,11 +5,12 @@ Contains execute_batch_forecast (BackgroundTasks job) and batch orchestration.
 from __future__ import annotations
 
 from collections import defaultdict
-
 import pandas as pd
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
+import core.config as config
+import models
 import ml.loader as ml_loader
 from ml.predictor import EWSPredictor
 from repositories.forecast_repo import (
@@ -19,8 +20,9 @@ from repositories.forecast_repo import (
     ForecastMonthlyRepository,
 )
 from repositories.province_repo import ProvinceRepository
-from services.ews_service import resolve_pipeline
+from services.ews_service import resolve_pipeline, predict_ews
 from services.feature_engineering import get_province_dataframe_with_features
+from services.scaling_service import unscale_output
 
 
 def _to_monthly_records(rows: list[dict]) -> list[dict]:
@@ -79,10 +81,18 @@ def execute_batch_forecast(batch_id: int, months_ahead: int | None = None) -> No
         total_processed = 0
         for prov in provinces:
             cluster_id = prov.cluster_wilayah
-            if cluster_id not in ml_loader.forecast_model:
+
+            cluster_bundle = ml_loader.forecast_model.get(cluster_id)
+            if cluster_bundle is None:
                 continue
 
-            cluster_models = ml_loader.forecast_model[cluster_id]
+            forecaster = cluster_bundle.get("forecaster_object")
+            lag_cols = cluster_bundle.get("lag_features_schema", [])
+            target_cols = cluster_bundle.get("target_features_schema", config.TARGET_FORECAST_COLS)
+
+            if forecaster is None:
+                continue
+
             df_prov = get_province_dataframe_with_features(prov.name, db)
             if df_prov.empty:
                 continue
@@ -106,7 +116,7 @@ def execute_batch_forecast(batch_id: int, months_ahead: int | None = None) -> No
                 new_row["dayofyear"] = next_date.dayofyear
                 new_row["weekofyear"] = next_date.isocalendar()[1]
 
-                for t in config.TARGET_FORECAST_COLS:
+                for t in target_cols:
                     if len(prov_data) >= 1:
                         val1 = prov_data[t].iloc[-1]
                         new_row[f"{t}_lag_1"] = val1
@@ -122,24 +132,25 @@ def execute_batch_forecast(batch_id: int, months_ahead: int | None = None) -> No
                     if len(prov_data) >= 6:
                         new_row[f"{t}_lag_6"] = prov_data[t].iloc[-6]
 
-                pred_dict: dict[str, float] = {}
-                for target in config.TARGET_FORECAST_COLS:
-                    if target in cluster_models:
-                        m = cluster_models[target]
-                        f_cols = list(m.feature_names_in_)
-                        X_pred = pd.DataFrame([new_row]).reindex(columns=f_cols, fill_value=0)
-                        pred_val = float(m.predict(X_pred)[0])
-                        pred_dict[target] = pred_val
-                        new_row[target] = pred_val
+                X_pred = pd.DataFrame([new_row]).reindex(columns=lag_cols, fill_value=0)
+                pred_vals = forecaster.predict(X_pred)[0]
+                pred_dict = {target_cols[i]: float(pred_vals[i]) for i in range(len(target_cols))}
 
-                rainfall = pred_dict.get("Rainfall")
-                spi_3_months = pred_dict.get("SPI - 3 months")
-                temperature = pred_dict.get("Temperature")
-                wsi = pred_dict.get("Water Satisfaction Index (WSI)")
-                solar_radiation = pred_dict.get("Solar Radiation")
-                soil_moisture = pred_dict.get("Soil Moisture (gapfilled historical time series)")
-                fpar = pred_dict.get("FPAR")
-                fpar_zscore = pred_dict.get("FPAR - zscore")
+                for target in target_cols:
+                    if target in pred_dict:
+                        new_row[target] = pred_dict[target]
+
+                # Unscale forecast predictions to real-world values for display/storage
+                unscaled = unscale_output(pred_dict, target_cols)
+
+                rainfall = unscaled.get("Rainfall")
+                spi_3_months = unscaled.get("SPI - 3 months")
+                temperature = unscaled.get("Temperature")
+                wsi = unscaled.get("Water Satisfaction Index (WSI)")
+                solar_radiation = unscaled.get("Solar Radiation")
+                soil_moisture = unscaled.get("Soil Moisture (gapfilled historical time series)")
+                fpar = unscaled.get("FPAR")
+                fpar_zscore = unscaled.get("FPAR - zscore")
 
                 feat_record = models.ForecastFeature(
                     province_id=prov.id,
