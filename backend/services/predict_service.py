@@ -15,6 +15,7 @@ from repositories.province_repo import ProvinceRepository
 from repositories.simulation_repo import SimulationSessionRepository
 from services.ews_service import resolve_pipeline, predict_ews
 from services.feature_engineering import get_province_dataframe_with_features
+from services.scaling_service import scale_input, unscale_output
 from sqlalchemy.orm import Session
 
 
@@ -34,15 +35,28 @@ def predict_ews_endpoint(request, db: Session) -> dict[str, Any]:
     if df_prov.empty:
         raise ValueError("Province data not found in database.")
 
+    # User provides real-world values - scale them before model input
+    user_values = {
+        "Rainfall": request.Rainfall,
+        "SPI - 3 months": request.SPI_3_months,
+        "Temperature": request.Temperature,
+        "Water Satisfaction Index (WSI)": request.WSI,
+        "Solar Radiation": request.Solar_Radiation,
+        "Soil Moisture (gapfilled historical time series)": request.Soil_Moisture,
+        "FPAR": request.FPAR,
+        "FPAR - zscore": request.FPAR_zscore,
+    }
+    
+    # Scale only the features that have scaler stats (excludes month_extracted)
+    scaled_values = scale_input(user_values)  # Use only features with stats
+
     last_row = df_prov.sort_values("date").iloc[-1].copy()
-    last_row["Rainfall"] = request.Rainfall
-    last_row["SPI - 3 months"] = request.SPI_3_months
-    last_row["Temperature"] = request.Temperature
-    last_row["Water Satisfaction Index (WSI)"] = request.WSI
-    last_row["Solar Radiation"] = request.Solar_Radiation
-    last_row["Soil Moisture (gapfilled historical time series)"] = request.Soil_Moisture
-    last_row["FPAR"] = request.FPAR
-    last_row["FPAR - zscore"] = request.FPAR_zscore
+    last_row["month_extracted"] = request.month_extracted if hasattr(request, 'month_extracted') else 6
+    
+    # Apply scaled values to features that were actually scaled
+    for feat, scaled_val in scaled_values.items():
+        if feat in last_row.index:
+            last_row[feat] = scaled_val
 
     if ml_loader.ews_pipeline is None:
         raise RuntimeError("EWS Master Pipeline not loaded.")
@@ -93,7 +107,8 @@ def forecast_predict(province: str, steps: int, db: Session) -> dict[str, Any]:
     """
     import numpy as np
 
-    if ml_loader.forecast_model is None:
+    forecast_model = ml_loader.forecast_model
+    if forecast_model is None:
         raise RuntimeError("Forecast model not loaded.")
 
     if province not in config.PROVINCES_LIST:
@@ -109,10 +124,18 @@ def forecast_predict(province: str, steps: int, db: Session) -> dict[str, Any]:
     prov_data = df_prov.sort_values("date").tail(100).copy()
     cluster_id = config.CLUSTER_MAP.get(province, 0)
 
-    if cluster_id not in ml_loader.forecast_model:
+    forecast_model_bundle = forecast_model.get(cluster_id)
+    if forecast_model_bundle is None:
         raise ValueError(f"Forecast model for cluster {cluster_id} not found.")
 
-    cluster_models = ml_loader.forecast_model[cluster_id]
+    # Extract forecaster and schema from bundle (saved format: forecaster_object, lag_features_schema, target_features_schema)
+    forecaster = forecast_model_bundle.get("forecaster_object")
+    lag_cols = forecast_model_bundle.get("lag_features_schema", [])
+    target_cols = forecast_model_bundle.get("target_features_schema", config.TARGET_FORECAST_COLS)
+
+    if forecaster is None:
+        raise RuntimeError(f"Forecaster object missing for cluster {cluster_id}.")
+
     predictions: list[dict] = []
 
     for step in range(steps):
@@ -131,7 +154,7 @@ def forecast_predict(province: str, steps: int, db: Session) -> dict[str, Any]:
         new_row["dayofyear"] = next_date.dayofyear
         new_row["weekofyear"] = next_date.isocalendar()[1]
 
-        for t in config.TARGET_FORECAST_COLS:
+        for t in target_cols:
             if len(prov_data) >= 1:
                 val1 = prov_data[t].iloc[-1]
                 new_row[f"{t}_lag_1"] = val1
@@ -147,21 +170,25 @@ def forecast_predict(province: str, steps: int, db: Session) -> dict[str, Any]:
             if len(prov_data) >= 6:
                 new_row[f"{t}_lag_6"] = prov_data[t].iloc[-6]
 
-        pred_dict: dict[str, float] = {}
-        for target in config.TARGET_FORECAST_COLS:
-            if target in cluster_models:
-                m = cluster_models[target]
-                f_cols = list(m.feature_names_in_)
-                X_pred = pd.DataFrame([new_row]).reindex(columns=f_cols, fill_value=0)
-                pred_val = round(float(m.predict(X_pred)[0]), 3)
-                pred_dict[target] = pred_val
-                new_row[target] = pred_val
+        # Prepare features for MultiOutputRegressor
+        X_pred = pd.DataFrame([new_row]).reindex(columns=lag_cols, fill_value=0)
+        pred_vals = forecaster.predict(X_pred)[0]  # MultiOutputRegressor returns 2D array
+
+        pred_dict = {target_cols[i]: float(pred_vals[i]) for i in range(len(target_cols))}
+
+        # Apply predictions back to the row for recursive forecasting
+        for target in target_cols:
+            if target in pred_dict:
+                new_row[target] = pred_dict[target]
+
+        # Unscale the prediction for display (scaled -> real-world values)
+        pred_unscaled = unscale_output(pred_dict, target_cols)
 
         predictions.append(
             {
                 "date": next_date.strftime("%Y-%m-%d"),
                 "step": step + 1,
-                "predicted": pred_dict,
+                "predicted": pred_unscaled,
             }
         )
         prov_data = pd.concat([prov_data, pd.DataFrame([new_row])], ignore_index=True)
@@ -174,14 +201,21 @@ def forecast_predict(province: str, steps: int, db: Session) -> dict[str, Any]:
         historical_dates = [
             pd.to_datetime(d).strftime("%Y-%m-%d") for d in hist_df["date"]
         ]
-        for target in config.TARGET_FORECAST_COLS:
-            if target in cluster_models:
-                m = cluster_models[target]
-                f_cols = list(m.feature_names_in_)
-                X_hist = hist_df.reindex(columns=f_cols, fill_value=0)
-                hist_preds = m.predict(X_hist)
-                historical_pred[target] = [round(float(p), 3) for p in hist_preds]
-                historical_actual[target] = [round(float(a), 3) for a in hist_df[target]]
+        # Prepare historical features
+        X_hist = hist_df.reindex(columns=lag_cols, fill_value=0)
+        hist_preds = forecaster.predict(X_hist)
+
+        for target_idx, target in enumerate(target_cols):
+            hist_pred_vals = [float(p[target_idx]) for p in hist_preds]
+            # Predictions are in scaled form - unscale for display
+            hist_pred_unscaled = unscale_output(
+                {target: [round(p, 3) for p in hist_pred_vals]}, [target]
+            )
+            historical_pred[target] = hist_pred_unscaled.get(target, [])
+            # Historical actuals are z-scores in DB - unscale for display
+            historical_actual[target] = unscale_output(
+                {target: [float(a) for a in hist_df[target].values]}, [target]
+            ).get(target, [0.0])
 
     return {
         "province": province,

@@ -6,6 +6,7 @@ import numpy as np
 import models
 from database import get_db
 
+from services.scaling_service import load_scaler_stats
 import core.config as config
 
 
@@ -85,6 +86,16 @@ def _map_data_historical(year: Optional[str], month: Optional[str], db: Session)
         avg_rainfall = round(float(np.mean([m.rainfall for m in m_list if m.rainfall is not None])), 2) if m_list else 0.0
         avg_temp = round(float(np.mean([m.temperature for m in m_list if m.temperature is not None])), 2) if m_list else 0.0
         avg_spi = round(float(np.mean([m.spi_3_months for m in m_list if m.spi_3_months is not None])), 2) if m_list else 0.0
+
+        # Unscale values from z-scores to real-world for display
+        try:
+            scaler_stats = load_scaler_stats()
+            if avg_rainfall != 0.0 and 'Rainfall' in scaler_stats:
+                avg_rainfall = round(avg_rainfall * scaler_stats['Rainfall']['scale'] + scaler_stats['Rainfall']['center'], 2)
+            if avg_temp != 0.0 and 'Temperature' in scaler_stats:
+                avg_temp = round(avg_temp * scaler_stats['Temperature']['scale'] + scaler_stats['Temperature']['center'], 2)
+        except Exception:
+            pass
 
         cluster = db.query(models.Province.cluster_wilayah).filter(models.Province.name == prov).scalar()
 

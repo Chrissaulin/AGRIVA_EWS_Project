@@ -10,6 +10,7 @@ import models
 from database import get_db
 
 import core.config as config
+from services.scaling_service import load_scaler_stats
 
 
 router = APIRouter()
@@ -53,13 +54,23 @@ def eda_dashboard(
         })
     df = pd.DataFrame(data_list)
 
-    # Calculate statistics
-    avg_rain = float(df['Rainfall'].mean()) if not df.empty else 0
-    avg_temp = float(df['Temperature'].mean()) if not df.empty else 0
+    # Calculate statistics (unscale from z-scores to real-world values)
+    try:
+        scaler_stats = load_scaler_stats()
+        rain_mean = float(df['Rainfall'].mean()) if not df.empty else 0
+        avg_rain = (rain_mean * scaler_stats.get('Rainfall', {}).get('scale', 1) + scaler_stats.get('Rainfall', {}).get('center', 0)) if not df.empty else 0
+
+        temp_mean = float(df['Temperature'].mean()) if not df.empty else 0
+        avg_temp = (temp_mean * scaler_stats.get('Temperature', {}).get('scale', 1) + scaler_stats.get('Temperature', {}).get('center', 0)) if not df.empty else 0
+
+        max_temp = ((float(df['Temperature'].max()) * scaler_stats.get('Temperature', {}).get('scale', 1) + scaler_stats.get('Temperature', {}).get('center', 0))) if not df.empty else 0
+    except Exception:
+        avg_rain = float(df['Rainfall'].mean()) if not df.empty else 0
+        avg_temp = float(df['Temperature'].mean()) if not df.empty else 0
+        max_temp = float(df['Temperature'].max()) if not df.empty else 0
 
     mode_target = df['target_biner'].mode()
     dominant_status = "Berisiko" if not mode_target.empty and mode_target.iloc[0] == 1 else "Aman"
-    max_temp = float(df['Temperature'].max()) if not df.empty else 0
 
     aman_count = int((df['target_biner'] == 0).sum())
     berisiko_count = int((df['target_biner'] == 1).sum())
@@ -167,14 +178,14 @@ def get_classification_dashboard(cluster: str = "all"):
     if cluster == "all":
         tp, fn, fp, tn = global_tp, global_fn, global_fp, global_tn
         recall, f1, roc_auc = global_recall, global_f1, global_roc
-        opt_thresh = sum([models_dict[i].get('threshold_siaga', 0.5) if type(models_dict[i]) == dict else 0.5 for i in range(3)])/3
+        opt_thresh = sum([models_dict[i].get('operational_threshold', 0.5) if type(models_dict[i]) == dict else 0.5 for i in range(3)])/3
     else:
         m = notebook_metrics[cluster]
         tp, fn, fp, tn = m["tp"], m["fn"], m["fp"], m["tn"]
         recall, f1, roc_auc = m["recall"], m["f1"], m["roc"]
 
         cluster_dict = models_dict[int(cluster)]
-        opt_thresh = cluster_dict.get('threshold_siaga', 0.5) if type(cluster_dict) == dict else 0.5
+        opt_thresh = cluster_dict.get('operational_threshold', 0.5) if type(cluster_dict) == dict else 0.5
 
     cm = [[tn, fp], [fn, tp]]
 
@@ -183,12 +194,12 @@ def get_classification_dashboard(cluster: str = "all"):
     # Feature importances dynamically calculated from model
     if cluster != "all":
         cluster_dict = models_dict[int(cluster)]
-        model_obj = cluster_dict['model_xgboost'] if type(cluster_dict) == dict else cluster_dict
+        model_obj = cluster_dict['model_object'] if type(cluster_dict) == dict else cluster_dict
         importances = model_obj.feature_importances_
     else:
-        imp_0 = models_dict[0]['model_xgboost'].feature_importances_ if type(models_dict[0]) == dict else models_dict[0].feature_importances_
-        imp_1 = models_dict[1]['model_xgboost'].feature_importances_ if type(models_dict[1]) == dict else models_dict[1].feature_importances_
-        imp_2 = models_dict[2]['model_xgboost'].feature_importances_ if type(models_dict[2]) == dict else models_dict[2].feature_importances_
+        imp_0 = models_dict[0]['model_object'].feature_importances_ if type(models_dict[0]) == dict else models_dict[0].feature_importances_
+        imp_1 = models_dict[1]['model_object'].feature_importances_ if type(models_dict[1]) == dict else models_dict[1].feature_importances_
+        imp_2 = models_dict[2]['model_object'].feature_importances_ if type(models_dict[2]) == dict else models_dict[2].feature_importances_
         importances = (imp_0 + imp_1 + imp_2) / 3
 
     indices = np.argsort(importances)[::-1][:10]

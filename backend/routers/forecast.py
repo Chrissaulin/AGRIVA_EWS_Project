@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import pandas as pd
 import numpy as np
+import json
 
 import models
 from database import get_db
 import core.config as config
 from services.predict_service import forecast_predict
+from services.scaling_service import unscale_output, load_scaler_stats
 
 
 router = APIRouter()
@@ -95,12 +97,24 @@ def get_forecast_dashboard(cluster: str = "0", target: str = "Rainfall", db: Ses
         df_c = df_c.groupby('date')['value'].mean().reset_index().sort_values('date').tail(60)
         labels = df_c['date'].dt.strftime('%Y-%m-%d').tolist()
         y_true = df_c['value'].values
-        actual = [round(float(a), 4) for a in y_true]
 
+        # Unscale actual values from z-scores to real-world
+        try:
+            scaler_stats = load_scaler_stats()
+            if target in scaler_stats:
+                center = scaler_stats[target]['center']
+                scale = scaler_stats[target]['scale']
+                # Unscale y_true
+                unscaled_values = [float(a) * scale + center for a in y_true]
+            else:
+                unscaled_values = [float(a) for a in y_true]
+        except Exception:
+            unscaled_values = [float(a) for a in y_true]
+
+        actual = [round(v, 4) for v in unscaled_values]
         error_std = metrics.get("rmse", 1.0)
         np.random.seed(42)
-        y_pred = y_true + np.random.normal(0, error_std * 0.7, size=len(y_true))
-        predicted = [round(float(p), 4) for p in y_pred]
+        predicted = [round(float(p), 4) for p in (unscaled_values + np.random.normal(0, error_std * 0.7, size=len(unscaled_values)))]
 
         residuals = [a - p for a, p in zip(actual, predicted)]
         hist_counts, hist_bins = np.histogram(residuals, bins=10)
@@ -164,12 +178,27 @@ def forecast_history(province: str, variable: str = "Rainfall", db: Session = De
     metrics.reverse()
 
     db_col = db_var_map[variable]
+
+    # Collect values for unscaling
+    zscore_values = [getattr(m, db_col) for m in metrics if getattr(m, db_col) is not None]
+
+    # Unscale values to real-world if we have stats
+    values_unscaled = []
+    try:
+        scaler_stats = load_scaler_stats()
+        if variable in scaler_stats:
+            center = scaler_stats[variable]['center']
+            scale = scaler_stats[variable]['scale']
+            values_unscaled = [round(v * scale + center, 3) for v in zscore_values]
+    except Exception:
+        values_unscaled = [round(v, 3) for v in zscore_values]
+    
     result_data = []
-    for m in metrics:
+    for i, m in enumerate(metrics):
         val = getattr(m, db_col)
         result_data.append({
             "date": m.date.strftime('%Y-%m-%d'),
-            "value": round(float(val), 3) if val is not None else 0.0,
+            "value": values_unscaled[i] if i < len(values_unscaled) else round(float(val), 3) if val is not None else 0.0,
             "warning": "Berisiko" if m.target_biner == 1 else "Aman",
         })
 

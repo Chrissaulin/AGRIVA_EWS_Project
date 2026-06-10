@@ -1,4 +1,4 @@
-const API = "http://localhost:8001";
+﻿const API = "http://localhost:8001";
 let leafletMap, geojsonLayer, mapData = {};
 
 // ===== TIER 2: FRONTEND LOGIC ENGINEER =====
@@ -58,18 +58,125 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ===== MAP =====
+// ===== TIER 2: FRONTEND LOGIC ENGINEER =====
+
+// ===== NAVIGATION =====
+document.querySelectorAll('[data-page]').forEach(link => {
+    link.addEventListener('click', (e) => {
+        if(link.tagName === 'A' || link.tagName === 'BUTTON') e.preventDefault();
+        if(link.hasAttribute('data-page')) {
+            switchPage(link.dataset.page);
+        }
+    });
+});
+
+window.switchPage = function(page) {
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    
+    // Find nav link corresponding to the page and set active
+    const navLink = document.querySelector(`.nav-link[data-page="${page}"]`);
+    if(navLink) navLink.classList.add('active');
+
+    // Handle dropdown active state
+    if(page === 'eda' || page === 'model' || page === 'classification' || page === 'forecasting-eval') {
+        const dropdown = document.getElementById('navbarDropdown');
+        if(dropdown) dropdown.classList.add('active');
+    }
+
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    
+    if (page === 'map' && !leafletMap) initMap();
+    if (page === 'map' && leafletMap) setTimeout(() => leafletMap.invalidateSize(), 200);
+    if (page === 'eda') loadEDA();
+    if (page === 'model') loadModelDashboard();
+    if (page === 'classification' && typeof loadClassificationDashboard === 'function') loadClassificationDashboard();
+    if (page === 'forecasting-eval' && typeof loadForecastingEvalDashboard === 'function') loadForecastingEvalDashboard();
+}
+
+// ===== INIT =====
+document.addEventListener("DOMContentLoaded", () => {
+    loadMapFilters();
+    loadPredictProvinces();
+    loadForecastProvinces();
+    setupPredictForm();
+    setupForecastControls();
+
+
+    // Navbar shrink on scroll
+    window.addEventListener('scroll', () => {
+        const navbar = document.querySelector('.custom-navbar');
+        if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+    });
+});
+
+// ===== MAP =====
 const PROVINCE_NAME_MAP = {
-    "DI. ACEH": "Nangroe A.D.", "SUMATERA UTARA": "Sumatera Utara", "SUMATERA BARAT": "Sumatera Barat",
-    "RIAU": "Riau", "JAMBI": "Jambi", "SUMATERA SELATAN": "Sumatera Selatan", "BENGKULU": "Bengkulu",
-    "LAMPUNG": "Lampung", "BANGKA BELITUNG": "Bangka Belitung", 
-    "DKI JAKARTA": "Dki Jakarta", "JAWA BARAT": "Jawa Barat", "JAWA TENGAH": "Jawa Tengah",
-    "DAERAH ISTIMEWA YOGYAKARTA": "D.I. Yogyakarta", "JAWA TIMUR": "Jawa Timur", "PROBANTEN": "Banten",
-    "BALI": "Bali", "NUSATENGGARA BARAT": "Nusatenggara B.", "NUSA TENGGARA TIMUR": "Nusatenggara T.",
-    "KALIMANTAN BARAT": "Kalimantan Barat", "KALIMANTAN TENGAH": "Kalimantan T.", "KALIMANTAN SELATAN": "Kalimantan S.",
-    "KALIMANTAN TIMUR": "Kalimantan Timur", "SULAWESI UTARA": "Sulawesi Utara", "SULAWESI TENGAH": "Sulawesi Tengah",
-    "SULAWESI SELATAN": "Sulawesi Selatan", "SULAWESI TENGGARA": "Sulawesi Tengg.", "GORONTALO": "Gorontalo",
-    "MALUKU": "Maluku", "MALUKU UTARA": "Maluku Utara", "IRIAN JAYA BARAT": "Papua Barat", 
-    "IRIAN JAYA TENGAH": "Papua", "IRIAN JAYA TIMUR": "Papua"
+    // Correct mappings for existing provinces (matching CSV region_name)
+    "Bali": "Bali",
+    "Bangka Belitung": "Bangka Belitung",
+    "Banten": "Banten",
+    "Bengkulu": "Bengkulu",
+    "DI Yogyakarta": "DI Yogyakarta",
+    "Gorontalo": "Gorontalo",
+    "Jambi": "Jambi",
+    "Jawa Barat": "Jawa Barat",
+    "Jawa Tengah": "Jawa Tengah",
+    "Jawa Timur": "Jawa Timur",
+    "Kalimantan Selatan": "Kalimantan Selatan",
+    "Kalimantan Tengah": "Kalimantan Tengah",
+    "Kalimantan Timur": "Kalimantan Timur",
+    "Lampung": "Lampung",
+    "Nusa Tenggara Barat": "Nusa Tenggara Barat",
+    "Nusa Tenggara Timur": "Nusa Tenggara Timur",
+    "Sulawesi Barat": "Sulawesi Barat",
+    "Sulawesi Selatan": "Sulawesi Selatan",
+    "Sulawesi Tengah": "Sulawesi Tengah",
+    "Sulawesi Tenggara": "Sulawesi Tenggara",
+    "Sulawesi Utara": "Sulawesi Utara",
+    "Sumatera Barat": "Sumatera Barat",
+    "Sumatera Selatan": "Sumatera Selatan",
+    "Sumatera Utara": "Sumatera Utara",
+    "Aceh": "Aceh",
+    // Legacy uppercase mappings for GeoJSON compatibility
+    "DI. ACEH": "Aceh",
+    "DAERAH ISTIMEWA YOGYAKARTA": "DI Yogyakarta",
+    "NUSATENGGARA BARAT": "Nusa Tenggara Barat",
+    "NUSA TENGGARA TIMUR": "Nusa Tenggara Timur",
+    "SULAWESI BARAT": "Sulawesi Barat",
+    // Uppercase GeoJSON names (exact matches from geojson)
+    // Note: duplicate keys below were removed - they would overwrite correct mappings
+    "BALI": "Bali",
+    "BANGKA BELITUNG": "Bangka Belitung",
+    "BENGKULU": "Bengkulu",
+    "JAMBI": "Jambi",
+    "JAWA BARAT": "Jawa Barat",
+    "JAWA TENGAH": "Jawa Tengah",
+    "JAWA TIMUR": "Jawa Timur",
+    "KALIMANTAN SELATAN": "Kalimantan Selatan",
+    "KALIMANTAN TENGAH": "Kalimantan Tengah",
+    "LAMPUNG": "Lampung",
+    "MALUKU UTARA": null, // Note: Not in DB
+    "NUSA TENGGARA TIMUR": "Nusa Tenggara Timur",
+    "RIAU": null, // Note: Not in DB
+    "SULAWESI SELATAN": "Sulawesi Selatan",
+    "SULAWESI TENGAH": "Sulawesi Tengah",
+    "SULAWESI TENGGARA": "Sulawesi Tenggara",
+    "SULAWESI UTARA": "Sulawesi Utara",
+    "SUMATERA BARAT": "Sumatera Barat",
+    "SUMATERA SELATAN": "Sumatera Selatan",
+    "SUMATERA UTARA": "Sumatera Utara",
+    "GORONTALO": "Gorontalo", // Fixed case from GORontalo
+    "DKI JAKARTA": null,
+    "IRIAN JAYA BARAT": null,
+    "IRIAN JAYA TENGAH": null,
+    "IRIAN JAYA TIMUR": null,
+    "KALIMANTAN BARAT": null,
+    "MALUKU": null
 };
 
 async function loadMapFilters() {
@@ -172,13 +279,13 @@ async function loadMapData() {
                         };
                         layer.setStyle(customStyle);
                         layer.options.customStyle = customStyle;
-                        layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><span class="badge ${isRisk ? 'bg-danger' : 'bg-success'} mb-2">${info.warning}</span><div class="small text-muted">Cluster: ${info.cluster}<br>Curah Hujan: ${info.avg_rainfall} mm<br>Suhu: ${info.avg_temperature}°C<br>SPI-3: ${info.avg_spi}${info.forecast_year ? '<br><em>Data Forecast</em>' : ''}</div>`);
+                        layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><span class="badge ${isRisk ? 'bg-danger' : 'bg-success'} mb-2">${info.warning}</span><div class="small text-muted">Cluster: ${info.cluster}<br>Curah Hujan: ${info.avg_rainfall} mm<br>Suhu: ${info.avg_temperature}Â°C<br>SPI-3: ${info.avg_spi}${info.forecast_year ? '<br><em>Data Forecast</em>' : ''}</div>`);
                     } else if (matchCluster && !matchStatus) {
                         // Matches cluster, but fails status filter (Show as gray but keep data)
                         const grayStyle = { fillColor: '#9ca3af', color: '#6b7280', fillOpacity: 0.6, weight: 1.5 };
                         layer.setStyle(grayStyle);
                         layer.options.customStyle = grayStyle;
-                        layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><span class="badge bg-secondary mb-2">Tidak Masuk Filter Status</span><div class="small text-muted">Status Asli: <strong class="${isRisk ? 'text-danger' : 'text-success'}">${info.warning}</strong><br>Cluster: ${info.cluster}<br>Curah Hujan: ${info.avg_rainfall} mm<br>Suhu: ${info.avg_temperature}°C<br>SPI-3: ${info.avg_spi}</div>`);
+                        layer.setPopupContent(`<div class="fw-bold mb-1">${geoName}</div><span class="badge bg-secondary mb-2">Tidak Masuk Filter Status</span><div class="small text-muted">Status Asli: <strong class="${isRisk ? 'text-danger' : 'text-success'}">${info.warning}</strong><br>Cluster: ${info.cluster}<br>Curah Hujan: ${info.avg_rainfall} mm<br>Suhu: ${info.avg_temperature}Â°C<br>SPI-3: ${info.avg_spi}</div>`);
                     } else {
                         // Fails cluster filter completely (Make very faint)
                         const hiddenStyle = { fillColor: '#f9fafb', color: '#e5e7eb', fillOpacity: 0.2, weight: 1 };
@@ -198,7 +305,7 @@ async function loadMapData() {
         // Update Stats UI
         document.getElementById('statMapSafe').textContent = countSafe;
         document.getElementById('statMapRisk').textContent = countRisk;
-        document.getElementById('statMapTemp').textContent = countTemp > 0 ? (sumTemp/countTemp).toFixed(2) + "°C" : "-";
+        document.getElementById('statMapTemp').textContent = countTemp > 0 ? (sumTemp/countTemp).toFixed(2) + "Â°C" : "-";
 
     } catch (e) { 
         console.error("Map data error:", e);
@@ -792,9 +899,9 @@ async function loadEdaDashboard() {
 
         // KPIs
         document.getElementById('edaKpiRain').textContent = d.kpis.avg_rainfall + " mm";
-        document.getElementById('edaKpiTemp').textContent = d.kpis.avg_temperature + " °C";
+        document.getElementById('edaKpiTemp').textContent = d.kpis.avg_temperature + " Â°C";
         document.getElementById('edaKpiStatus').textContent = d.kpis.dominant_status;
-        document.getElementById('edaKpiAnomaly').textContent = d.kpis.max_temp + " °C";
+        document.getElementById('edaKpiAnomaly').textContent = d.kpis.max_temp + " Â°C";
 
         // Destroy old charts
         Object.values(edaCharts).forEach(c => c.destroy());
@@ -1014,7 +1121,7 @@ function loadModelDashboard() {
             },
             scales: {
                 x: { title: { display: true, text: 'Curah Hujan (mm)' }, grid: { color: '#f3f4f6' } },
-                y: { title: { display: true, text: 'Suhu Udara (°C)' }, grid: { color: '#f3f4f6' } }
+                y: { title: { display: true, text: 'Suhu Udara (Â°C)' }, grid: { color: '#f3f4f6' } }
             }
         }
     });
@@ -1048,7 +1155,7 @@ async function loadForecastingEvalData() {
         document.getElementById('forecastKpiMae').textContent = d.kpis.mae;
         document.getElementById('forecastKpiRmse').textContent = d.kpis.rmse;
         document.getElementById('forecastKpiMape').textContent = `${d.kpis.mape}%`;
-        document.getElementById('forecastKpiSafety').textContent = `± ${d.kpis.safety}`;
+        document.getElementById('forecastKpiSafety').textContent = `Â± ${d.kpis.safety}`;
 
         // Render Table logic removed as per user request
 
@@ -1089,3 +1196,4 @@ async function loadForecastingEvalData() {
         console.error("Forecasting dashboard error: ", err);
     }
 }
+
