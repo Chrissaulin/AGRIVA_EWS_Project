@@ -1,0 +1,34 @@
+{
+  "Rainfall": {
+    "center": 61.670500000000004,
+    "scale": 66.05700000000002
+  },
+  "SPI - 3 months": {
+    "center": 0.132,
+    "scale": 1.3
+  },
+  "Temperature": {
+    "center": 25.467,
+    "scale": 1.6219999999999999
+  },
+  "Water Satisfaction Index (WSI)": {
+    "center": 98.664,
+    "scale": 7.712249999999997
+  },
+  "Solar Radiation": {
+    "center": 179969.11,
+    "scale": 31834.99774999998
+  },
+  "Soil Moisture (gapfilled historical time series)": {
+    "center": 0.324,
+    "scale": 0.057999999999999996
+  },
+  "FPAR": {
+    "center": 59.9895,
+    "scale": 10.83325
+  },
+  "FPAR - zscore": {
+    "center": 0.013,
+    "scale": 0.534
+  }
+}
